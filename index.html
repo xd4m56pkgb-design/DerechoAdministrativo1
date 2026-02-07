@@ -1,0 +1,3604 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DERECHO ADMINISTRATIVO I: SISTEMA DE FUENTES Y ORGANIZACIÓN ADMINISTRATIVA</title>
+
+<style>
+body { font-family: Arial; max-width: 800px; margin:20px auto; background:#f5f7fb; }
+h1 { text-align:center; margin-bottom:10px; }
+#controls { display:flex; gap:10px; justify-content:center; margin-bottom:12px; }
+select, button { padding:8px 12px; border-radius:4px; font-size:14px; }
+#restartBtn { background:#3498db; color:white; border:none; }
+#restartBtn:hover { background:#2c80b8; }
+
+#questionStats{
+  text-align:center;
+  font-size:0.92rem;
+  color:#2c3e50;
+  margin: 0 auto 18px auto;
+  max-width: 760px;
+  background:#ffffff;
+  padding:10px 12px;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.10);
+}
+#questionStats .muted{ color:#666; font-size:0.88rem; }
+#questionStats b{ color:#111; }
+
+#questionContainer {
+  background:#fff; padding:20px; border-radius:8px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.1); display:none;
+}
+
+.option {
+  display:block; width:100%; padding:10px; margin:5px 0;
+  background:#fafafa; border:1px solid #ccc; border-radius:4px; cursor:pointer;
+}
+.option.correct { background:#e5ffe5; border-color:green; }
+.option.incorrect { background:#ffe5e5; border-color:red; }
+
+#explanation {
+  margin-top:15px; padding:12px; background:#eef2f7;
+  border-left:4px solid #3498db;
+}
+
+#nextBtn {
+  margin-top:15px; padding:8px 12px; border:none;
+  background:#27ae60; color:white; border-radius:4px; cursor:pointer;
+}
+
+#liveScore{
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 8px;
+  text-align: right;
+}
+
+#timer{
+  font-size: 0.95rem;
+  font-weight: bold;
+  color: #c0392b;
+  text-align: right;
+  margin-bottom: 4px;
+}
+
+#coverage{
+  font-size: 0.9rem;
+  color: #555;
+  text-align: right;
+  margin-bottom: 10px;
+}
+
+#firma{
+  margin-top: 30px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #777;
+  padding: 15px 0;
+  font-style: italic;
+}
+
+.card{
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  margin: 0 auto 25px auto;
+  max-width: 600px;
+  text-align: center;
+}
+#instrucciones h3{
+  margin-top: 0;
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+  color: #2c3e50;
+}
+#instrucciones ul{
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  color: #444;
+  font-size: 0.9rem;
+  line-height: 1.4rem;
+}
+#instrucciones ul li{ margin-bottom: 6px; }
+</style>
+</head>
+
+<body>
+
+<h1>DERECHO ADMINISTRATIVO I:<br>SISTEMA DE FUENTES Y<br>ORGANIZACIÓN ADMINISTRATIVA</h1>
+
+<div id="instrucciones" class="card">
+  <h3>INDICACIONES:</h3>
+  <ul>
+    <li>Lee el capítulo a repasar en el libro o en tus apuntes.</li>
+    <li>Elige el test a realizar entre los 2 primeros temas del desplegable (resto de temas en proceso).</li>
+    <li>20 preguntas aleatorias de 100 en cada tema, realiza 5 test consecutivos para realizar todas</li>
+    <li>Repasa las explicaciones tras contestar la pregunta para estudiar.</li>
+    <li>Dispones de un cronómetro activo.</li>
+    <li>El sistema calcula tu nota como en la UNED.</li>
+    <li>© by M.García</li>
+  </ul>
+</div>
+
+<div id="controls">
+  <label>Tema:</label>
+  <select id="temaSelect">
+    <option value="all">EXAMEN DE TODO EL CONTENIDO</option>
+    <option value="1">Tema 1, EL DERECHO ADMINISTRATIVO</option>
+    <option value="2">Tema 2, LAS FUENTES LEGALES Y SUPRALEGALES DEL DERECHO ADMINISTRATIVO</option>
+    <option value="3">TEMA 3</option>
+    <option value="4">TEMA 4</option>
+    <option value="5">TEMA 5</option>
+    <option value="6">TEMA 6</option>
+    <option value="7">TEMA 7</option>
+    <option value="8">TEMA 8</option>
+    <option value="9">TEMA 9</option>
+    <option value="10">TEMA 10</option>
+    <option value="11">TEMA 11</option>
+  </select>
+
+  <button id="restartBtn">Iniciar Test</button>
+</div>
+
+<!-- CONTADOR / ESTADÍSTICAS POR TEMA -->
+<div id="questionStats"></div>
+
+<div id="questionContainer">
+  <div id="questionCounter"></div>
+  <div id="timer"></div>
+  <div id="liveScore"></div>
+  <div id="coverage"></div>
+  <div id="questionText"></div>
+  <div id="options"></div>
+  <div id="feedback"></div>
+  <div id="explanation"></div>
+  <div id="finalResult"></div>
+  <div id="firma">© by M.García</div>
+  <button id="nextBtn" style="display:none;">Siguiente</button>
+</div>
+
+<script>
+// =====================================================
+// CONFIGURACIÓN
+// =====================================================
+const MAX_EXAM_QUESTIONS = 20;
+let usedIds = [];
+
+// ================== CRONÓMETRO ==================
+let EXAM_SECONDS = 30 * 60; // 30 minutos
+let remainingSeconds = 0;
+let timerInterval = null;
+
+// =====================================================
+// PREGUNTAS
+// =====================================================
+const masterQuestions = [
+// ==================================================
+// TEMA 1 — EPÍGRAFE 1.1
+// INTRODUCCIÓN (Preguntas 1–8)
+// ==================================================
+
+{
+  id: 1,
+  tema: 1,
+  epigrafe: "1.1",
+  text: "La especial dificultad para definir el Derecho administrativo mediante un criterio único deriva principalmente de que:",
+  options: [
+    "su contenido depende exclusivamente de la voluntad del legislador en cada momento histórico",
+    "puede manifestarse con perfiles distintos según el ámbito material y el contexto histórico",
+    "carece de autonomía científica frente a otras ramas del Derecho público"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El texto subraya que el Derecho administrativo puede presentarse como exorbitante, garantista o instrumental según el ámbito y el momento histórico, lo que impide fijar un criterio único e inmutable."
+},
+
+{
+  id: 2,
+  tema: 1,
+  epigrafe: "1.1",
+  text: "La afirmación de que el Derecho administrativo puede presentarse como Derecho exorbitante, garantista o instrumental pone de relieve que:",
+  options: [
+    "su régimen jurídico es siempre excepcional respecto del Derecho común",
+    "su configuración jurídica varía en función del tipo de actividad administrativa",
+    "su aplicación queda condicionada a la existencia de potestades administrativas"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La pluralidad de manifestaciones del Derecho administrativo responde a la diversidad de ámbitos de actuación administrativa, no a un carácter necesariamente excepcional ni exclusivamente potestativo."
+},
+
+{
+  id: 3,
+  tema: 1,
+  epigrafe: "1.1",
+  text: "La crítica a la búsqueda de un criterio definitorio único del Derecho administrativo se fundamenta jurídicamente en que dicha búsqueda:",
+  options: [
+    "desconoce la evolución histórica del Derecho público europeo",
+    "parte de una concepción previa y cerrada de la Administración pública",
+    "impide diferenciar entre Derecho administrativo y Derecho constitucional"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El texto califica esta búsqueda como apriorista, porque presupone una determinada concepción de la Administración (como sujeto o como actividad) antes de analizar la realidad jurídica."
+},
+
+{
+  id: 4,
+  tema: 1,
+  epigrafe: "1.1",
+  text: "Las distintas posiciones doctrinales surgidas ante la dificultad de definir el Derecho administrativo coinciden en que:",
+  options: [
+    "resulta científicamente obligatorio formular una definición unitaria",
+    "las concepciones totalizadoras no reflejan adecuadamente la realidad administrativa",
+    "el criterio subjetivo debe prevalecer sobre cualquier otro"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Aunque existen respuestas doctrinales diversas, el texto considera más adecuada la postura que rechaza concepciones totalizadoras, al no ajustarse a la experiencia jurídica."
+},
+
+{
+  id: 5,
+  tema: 1,
+  epigrafe: "1.1",
+  text: "El rechazo de las concepciones totalizadoras del Derecho administrativo se apoya en la constatación de que:",
+  options: [
+    "el Derecho administrativo ha perdido autonomía frente al Derecho constitucional",
+    "la realidad administrativa no admite un criterio definitorio único y permanente",
+    "las Administraciones públicas actúan siempre conforme al Derecho privado"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La experiencia demuestra que la Administración pública es una realidad plural, compleja y dinámica, incompatible con definiciones universales e inmutables."
+},
+
+{
+  id: 6,
+  tema: 1,
+  epigrafe: "1.1",
+  text: "La consideración de la Administración pública como una realidad plural y dinámica tiene como consecuencia que:",
+  options: [
+    "el Derecho administrativo deba identificarse con el Derecho aplicable a cualquier actuación administrativa",
+    "no pueda formularse una definición universal válida para todo tiempo y lugar",
+    "el Derecho administrativo carezca de principios generales comunes"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La diversidad de formas y funciones de la Administración impide una definición universal del Derecho administrativo válida para cualquier momento histórico."
+},
+
+{
+  id: 7,
+  tema: 1,
+  epigrafe: "1.1",
+  text: "La inexistencia de una definición universal del Derecho administrativo se explica, según el texto, porque:",
+  options: [
+    "el Derecho administrativo se confunde necesariamente con otras ramas del Derecho público",
+    "su objeto varía en función de las modalidades de Administración y del contexto histórico",
+    "el legislador ha renunciado a definir normativamente esta disciplina"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El texto conecta la ausencia de una definición universal con la variabilidad histórica y funcional de la Administración pública y de su régimen jurídico."
+},
+
+{
+  id: 8,
+  tema: 1,
+  epigrafe: "1.1",
+  text: "Quedan excluidos del concepto de Derecho administrativo, según el texto, aquellos sectores jurídicos que:",
+  options: [
+    "se aplican a la Administración cuando actúa conforme a Derecho privado o laboral, o tienen autonomía funcional propia",
+    "carecen de control jurisdiccional específico",
+    "se rigen por principios distintos del interés general"
+  ],
+  correctIndex: 0,
+  explanation:
+    "El Derecho administrativo no se identifica con todo el Derecho aplicable a la Administración: quedan fuera el Derecho privado y laboral cuando resultan aplicables, así como ramas autónomas como el Derecho financiero o de la Seguridad Social."
+},
+// ==================================================
+// TEMA 1 — EPÍGRAFE 1.2
+// LA CONCEPCIÓN ESTATUTARIA Y SU CRISIS (Preguntas 9–15)
+// ==================================================
+
+{
+  id: 9,
+  tema: 1,
+  epigrafe: "1.2",
+  text: "La concepción estatutaria del Derecho administrativo se caracteriza por entenderlo principalmente como:",
+  options: [
+    "el Derecho aplicable a la actividad administrativa con independencia del sujeto que la realice",
+    "el conjunto de normas que regulan a la Administración pública considerada como sujeto jurídico",
+    "un sistema normativo orientado a la protección de los administrados frente al poder público"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La concepción estatutaria parte de una perspectiva subjetiva: el Derecho administrativo es el Derecho propio del sujeto denominado Administración pública."
+},
+
+{
+  id: 10,
+  tema: 1,
+  epigrafe: "1.2",
+  text: "En la concepción estatutaria, la condición de Administración pública cumple la función de:",
+  options: [
+    "criterio suficiente para determinar el sometimiento al Derecho administrativo",
+    "presupuesto necesario para la aplicación de un régimen jurídico específico",
+    "elemento accesorio frente a la naturaleza material de la actividad desarrollada"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Esta concepción entiende que la condición subjetiva de Administración pública es el presupuesto necesario para la aplicación del Derecho administrativo."
+},
+
+{
+  id: 11,
+  tema: 1,
+  epigrafe: "1.2",
+  text: "Se considera que la concepción estatutaria incurre en un razonamiento circular porque:",
+  options: [
+    "define la Administración pública a partir de criterios políticos y no jurídicos",
+    "para identificar a la Administración pública es preciso acudir previamente al Derecho administrativo",
+    "no distingue entre personalidad jurídica y potestad administrativa"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La circularidad deriva de que para saber qué sujetos son Administración pública hay que recurrir al propio Derecho administrativo que se pretende definir."
+},
+
+{
+  id: 12,
+  tema: 1,
+  epigrafe: "1.2",
+  text: "Desde la perspectiva crítica, la concepción estatutaria resulta insuficiente porque ignora:",
+  options: [
+    "la personalidad jurídica de la Administración pública",
+    "los fines, la actividad y las potestades administrativas en la realidad material",
+    "la existencia de normas administrativas de carácter sectorial"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La crítica subraya que la concepción estatutaria se limita a un rasgo formal y desconoce elementos materiales esenciales como el interés general, la actividad y las potestades."
+},
+
+{
+  id: 13,
+  tema: 1,
+  epigrafe: "1.2",
+  text: "Las fracturas introducidas por el Derecho positivo a partir de 1992 evidencian la crisis de la concepción estatutaria porque:",
+  options: [
+    "amplían el concepto formal de Administración pública",
+    "someten al Derecho administrativo a órganos situados fuera de la Administración",
+    "eliminan la personalidad jurídica como elemento definidor"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El legislador extiende la aplicación del Derecho administrativo a órganos y sujetos que no encajan en el concepto formal de Administración pública."
+},
+
+{
+  id: 14,
+  tema: 1,
+  epigrafe: "1.2",
+  text: "La actuación de las Administraciones públicas conforme al Derecho privado pone en cuestión la concepción estatutaria porque:",
+  options: [
+    "implica la desaparición del Derecho administrativo",
+    "rompe la identificación automática entre Administración pública y Derecho administrativo",
+    "supone la renuncia al control jurisdiccional"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La aplicación del Derecho privado por la Administración demuestra que la condición subjetiva no basta para afirmar el sometimiento al Derecho administrativo."
+},
+
+{
+  id: 15,
+  tema: 1,
+  epigrafe: "1.2",
+  text: "El papel de las corporaciones de Derecho público en la crisis de la concepción estatutaria se explica porque:",
+  options: [
+    "ejercen funciones públicas sin integrarse plenamente en la Administración pública",
+    "carecen de personalidad jurídica propia",
+    "se rigen exclusivamente por Derecho privado"
+  ],
+  correctIndex: 0,
+  explanation:
+    "Las corporaciones de Derecho público ejercen funciones públicas y potestades administrativas, pero no encajan en el concepto formal de Administración pública, lo que evidencia la insuficiencia del criterio subjetivo."
+},
+// ==================================================
+// TEMA 1 — EPÍGRAFE 1.3
+// CRITERIOS MATERIALES Y FUNCIONALES (Preguntas 16–20)
+// ==================================================
+
+{
+  id: 16,
+  tema: 1,
+  epigrafe: "1.3",
+  text: "Los criterios materiales y funcionales del Derecho administrativo se caracterizan por atender principalmente a:",
+  options: [
+    "la naturaleza jurídica del sujeto que ejerce la actividad",
+    "la actividad desarrollada y las funciones ejercidas con independencia del sujeto",
+    "el régimen jurídico previsto con carácter general por el legislador"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Estos criterios se centran en la actividad administrativa y en el ejercicio de funciones públicas, prescindiendo de la condición subjetiva del autor del acto."
+},
+
+{
+  id: 17,
+  tema: 1,
+  epigrafe: "1.3",
+  text: "La razón por la que los criterios materiales y funcionales quedaron tradicionalmente en segundo plano frente al criterio subjetivo fue, principalmente:",
+  options: [
+    "la ausencia de potestades administrativas claramente identificables",
+    "la dificultad de formular una definición abstracta y general de la actividad administrativa",
+    "la inexistencia de control jurisdiccional sobre la actividad administrativa"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La complejidad para definir de forma abstracta qué es actividad administrativa favoreció históricamente la prevalencia del criterio subjetivo por su mayor simplicidad."
+},
+
+{
+  id: 18,
+  tema: 1,
+  epigrafe: "1.3",
+  text: "El cambio producido en el Derecho positivo a partir de los años noventa del siglo XX consiste, esencialmente, en:",
+  options: [
+    "la sustitución completa del criterio subjetivo por el funcional",
+    "la utilización sistemática de criterios funcionales para delimitar el sometimiento al Derecho administrativo",
+    "la reducción del ámbito de aplicación del Derecho administrativo a la Administración pública"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Desde los años noventa, el legislador recurre de forma sistemática a criterios funcionales para determinar cuándo una actividad queda sujeta al Derecho administrativo."
+},
+
+{
+  id: 19,
+  tema: 1,
+  epigrafe: "1.3",
+  text: "La noción de “actos sujetos al Derecho administrativo” cumple la función de:",
+  options: [
+    "identificar exclusivamente los actos dictados por Administraciones públicas",
+    "delimitar el ámbito de aplicación del Derecho administrativo con independencia del sujeto",
+    "atribuir carácter administrativo a todos los actos del sector público"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La legislación utiliza esta noción para determinar el sometimiento al Derecho administrativo atendiendo al tipo de acto y a su función, no solo al sujeto que lo dicta."
+},
+
+{
+  id: 20,
+  tema: 1,
+  epigrafe: "1.3",
+  text: "Para someter al Derecho administrativo a sujetos no integrados formalmente en la Administración pública, el criterio decisivo es:",
+  options: [
+    "la titularidad pública del capital social",
+    "el ejercicio de funciones o potestades administrativas",
+    "la participación de la Administración en sus órganos de dirección"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El criterio funcional central es el ejercicio de potestades administrativas, que justifica el sometimiento al Derecho administrativo aunque el sujeto no sea Administración pública."
+},
+// ==================================================
+// TEMA 1 — EPÍGRAFE 1.4
+// EL DERECHO ADMINISTRATIVO COMO OBJETO DE REGULACIÓN
+// (Preguntas 21–28)
+// ==================================================
+
+{
+  id: 21,
+  tema: 1,
+  epigrafe: "1.4",
+  text: "La distinción entre parte general y parte especial del Derecho administrativo responde, principalmente, a:",
+  options: [
+    "la separación entre normas de origen estatal y autonómico",
+    "la diferencia entre principios estructurales y regulaciones sectoriales concretas",
+    "la existencia de procedimientos administrativos comunes y especiales"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La parte general fija principios y categorías transversales, mientras que la parte especial regula sectores materiales concretos de la actividad administrativa."
+},
+
+{
+  id: 22,
+  tema: 1,
+  epigrafe: "1.4",
+  text: "La función esencial de la parte general del Derecho administrativo consiste en:",
+  options: [
+    "regular de forma exhaustiva todos los sectores de la actividad administrativa",
+    "garantizar un marco común mínimo y facilitar la aplicación del Derecho",
+    "sustituir a la legislación sectorial cuando esta resulte incompleta"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La parte general no regula sectores materiales, sino que proporciona un marco común que facilita la aplicación del Derecho y garantiza un nivel mínimo de protección."
+},
+
+{
+  id: 23,
+  tema: 1,
+  epigrafe: "1.4",
+  text: "Se afirma que la parte general del Derecho administrativo no tiene existencia autónoma porque:",
+  options: [
+    "solo puede aplicarse mediante normas reglamentarias",
+    "no se aplica directamente sin referencia a una regulación sectorial concreta",
+    "carece de respaldo constitucional propio"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Las categorías de la parte general se aplican siempre en conexión con normas sectoriales, no como reglas abstractas independientes."
+},
+
+{
+  id: 24,
+  tema: 1,
+  epigrafe: "1.4",
+  text: "La contribución de la parte general del Derecho administrativo a la protección de los ciudadanos se manifiesta, especialmente, en:",
+  options: [
+    "la uniformidad de la actuación administrativa con independencia del sector",
+    "la atribución de potestades reforzadas a la Administración",
+    "la reducción de la discrecionalidad administrativa"
+  ],
+  correctIndex: 0,
+  explanation:
+    "La parte general garantiza un nivel mínimo común de protección a los ciudadanos en todos los sectores de actividad administrativa."
+},
+
+{
+  id: 25,
+  tema: 1,
+  epigrafe: "1.4",
+  text: "La ausencia de un código único del Derecho administrativo se explica, fundamentalmente, por:",
+  options: [
+    "la naturaleza fragmentaria y sectorial de la actividad administrativa",
+    "la falta de voluntad codificadora del legislador",
+    "la primacía del reglamento sobre la ley en este ámbito"
+  ],
+  correctIndex: 0,
+  explanation:
+    "La diversidad y fragmentación de las regulaciones administrativas impide su codificación en un texto único, a diferencia de otras ramas del Derecho."
+},
+
+{
+  id: 26,
+  tema: 1,
+  epigrafe: "1.4",
+  text: "La LPAC y la LRJSP desempeñan un papel central en la parte general del Derecho administrativo porque:",
+  options: [
+    "regulan exclusivamente la actividad de la Administración General del Estado",
+    "establecen normas transversales aplicables a todas las Administraciones públicas",
+    "sustituyen a la legislación sectorial en materia administrativa"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Ambas leyes cumplen una función vertebradora al regular organización, funcionamiento y procedimiento comunes a todas las Administraciones."
+},
+
+{
+  id: 27,
+  tema: 1,
+  epigrafe: "1.4",
+  text: "Desde el punto de vista científico, la elaboración de la parte general del Derecho administrativo se produce mediante:",
+  options: [
+    "la sistematización directa realizada por el legislador",
+    "procesos complementarios de inducción y deducción a partir de la experiencia jurídica",
+    "la codificación progresiva de la jurisprudencia contencioso-administrativa"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La parte general se construye doctrinal y jurisprudencialmente mediante abstracción, combinando inducción desde lo sectorial y deducción desde principios."
+},
+
+{
+  id: 28,
+  tema: 1,
+  epigrafe: "1.4",
+  text: "La intervención directa del legislador en la parte general del Derecho administrativo tiene como efecto:",
+  options: [
+    "la vinculación del legislador a los procesos científicos previos",
+    "la proyección inmediata de sus decisiones sobre todos los sectores administrativos",
+    "la eliminación de la función sistematizadora de la jurisprudencia"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Cuando el legislador modifica la parte general, sus efectos se extienden a todas las regulaciones sectoriales, dada su función estructural."
+},
+// ==================================================
+// TEMA 1 — EPÍGRAFE 2.1
+// BASES CONSTITUCIONALES DEL DERECHO ADMINISTRATIVO
+// (Preguntas 29–46)
+// ==================================================
+
+{
+  id: 29,
+  tema: 1,
+  epigrafe: "2.1",
+  text: "Tras la Segunda Guerra Mundial, la transformación del Derecho público europeo se explica, principalmente, por:",
+  options: [
+    "la consolidación del principio de legalidad como eje exclusivo del sistema",
+    "la recuperación del valor normativo de la Constitución y la integración europea",
+    "la generalización del control jurisdiccional previo de la actividad administrativa"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El Derecho público europeo se reestructura por la centralidad constitucional y el proceso de integración europea, que desplazan el protagonismo exclusivo de la ley."
+},
+
+{
+  id: 30,
+  tema: 1,
+  epigrafe: "2.1",
+  text: "El desplazamiento del centro de gravedad del Derecho administrativo desde la ley a la Constitución implica que:",
+  options: [
+    "la ley pierde su condición de fuente del Derecho",
+    "la Constitución condiciona materialmente la actuación del legislador y de la Administración",
+    "la potestad reglamentaria queda subordinada al poder judicial"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La Constitución actúa como marco normativo superior que limita y orienta la acción legislativa y administrativa."
+},
+
+{
+  id: 31,
+  tema: 1,
+  epigrafe: "2.1",
+  text: "Frente al Estado liberal de Derecho, el Estado constitucional de Derecho se caracteriza por:",
+  options: [
+    "la identificación entre ley y voluntad general",
+    "la proclamación de valores superiores y la limitación material del legislador",
+    "la supresión del principio de separación de poderes"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El Estado constitucional incorpora valores y derechos que limitan al legislador y son controlables jurisdiccionalmente."
+},
+
+{
+  id: 32,
+  tema: 1,
+  epigrafe: "2.1",
+  text: "La recuperación del valor normativo de la Constitución afecta al principio clásico de legalidad en cuanto:",
+  options: [
+    "lo refuerza como principio absoluto",
+    "reduce su protagonismo como eje exclusivo del Derecho público",
+    "lo sustituye por el principio de seguridad jurídica"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El principio de legalidad sigue siendo esencial, pero deja de ocupar una posición exclusiva frente a la Constitución."
+},
+
+{
+  id: 33,
+  tema: 1,
+  epigrafe: "2.1",
+  text: "Afirmar que el Derecho administrativo es “Derecho constitucional concretizado” significa que:",
+  options: [
+    "el Derecho administrativo queda subordinado jerárquicamente al Derecho constitucional",
+    "las normas administrativas desarrollan y concretan principios constitucionales",
+    "la Constitución regula directamente toda la actividad administrativa"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El Derecho administrativo concreta principios constitucionales abstractos, sin que la Constitución regule exhaustivamente la actividad administrativa."
+},
+
+{
+  id: 34,
+  tema: 1,
+  epigrafe: "2.1",
+  text: "La idea de que el Derecho administrativo no es inmune a los cambios constitucionales se fundamenta en que:",
+  options: [
+    "la Constitución proyecta su influencia sobre todo el ordenamiento",
+    "la Administración actúa siempre al margen de la Constitución",
+    "el Derecho administrativo carece de autonomía científica"
+  ],
+  correctIndex: 0,
+  explanation:
+    "La Constitución condiciona e informa el conjunto del ordenamiento, incluido el Derecho administrativo."
+},
+
+{
+  id: 35,
+  tema: 1,
+  epigrafe: "2.1",
+  text: "Dentro del marco constitucional, el legislador conserva márgenes de configuración porque:",
+  options: [
+    "la Constitución impone soluciones únicas en todos los ámbitos",
+    "la Constitución actúa como ordenación marco compatible con diversas opciones políticas",
+    "el legislador queda limitado exclusivamente por la jurisprudencia constitucional"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La Constitución fija límites y objetivos, pero permite opciones legislativas diversas siempre que no la contradigan."
+},
+
+{
+  id: 36,
+  tema: 1,
+  epigrafe: "2.1",
+  text: "Los derechos fundamentales condicionan la ordenación administrativa en cuanto:",
+  options: [
+    "excluyen cualquier margen de actuación discrecional",
+    "actúan como límites materiales a las opciones legislativas y administrativas",
+    "solo vinculan a la Administración y no al legislador"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Los derechos fundamentales restringen las decisiones legislativas y administrativas, actuando como límites materiales."
+},
+
+{
+  id: 37,
+  tema: 1,
+  epigrafe: "2.1",
+  text: "Conforme al texto constitucional, actúan como bases del Derecho administrativo, entre otros, los principios de:",
+  options: [
+    "separación de funciones, Estado de Derecho y autonomía territorial",
+    "eficacia administrativa, jerarquía y autotutela",
+    "legalidad estricta, discrecionalidad y oportunidad política"
+  ],
+  correctIndex: 0,
+  explanation:
+    "El texto identifica principios estructurales constitucionales como bases del Derecho administrativo."
+},
+
+{
+  id: 38,
+  tema: 1,
+  epigrafe: "2.1",
+  text: "La separación de funciones se articula constitucionalmente mediante:",
+  options: [
+    "la atribución indistinta de funciones a todos los poderes",
+    "la asignación diferenciada de funciones legislativas, ejecutivas y jurisdiccionales",
+    "la subordinación del poder judicial al poder ejecutivo"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La Constitución distribuye funciones entre Cortes, Gobierno y órganos judiciales."
+},
+
+{
+  id: 39,
+  tema: 1,
+  epigrafe: "2.1",
+  text: "El control judicial de la potestad reglamentaria no puede convertirse en autorización previa porque:",
+  options: [
+    "la potestad reglamentaria corresponde exclusivamente al poder legislativo",
+    "supondría una quiebra del principio de separación de poderes",
+    "el control judicial solo puede ejercerse a instancia de parte"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La autorización judicial previa menoscabaría la potestad reglamentaria atribuida en exclusiva al poder ejecutivo."
+},
+
+{
+  id: 40,
+  tema: 1,
+  epigrafe: "2.1",
+  text: "La legitimación democrática de la Administración pública se articula principalmente a través de:",
+  options: [
+    "la elección directa de todos sus órganos",
+    "la dirección política del Gobierno y la vinculación a la ley",
+    "la autonomía funcional de cada órgano administrativo"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La Administración actúa bajo la dirección del Gobierno, que posee legitimación democrática directa o indirecta."
+},
+
+{
+  id: 41,
+  tema: 1,
+  epigrafe: "2.1",
+  text: "Las administraciones independientes plantean un problema específico de legitimación democrática porque:",
+  options: [
+    "carecen de base legal",
+    "no se integran en la cadena clásica de dirección política",
+    "ejercen exclusivamente funciones consultivas"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Su independencia funcional dificulta la integración plena en la cadena de legitimación democrática tradicional."
+},
+
+{
+  id: 42,
+  tema: 1,
+  epigrafe: "2.1",
+  text: "La relación entre principio democrático y principio de autonomía se manifiesta en que:",
+  options: [
+    "la autonomía excluye cualquier control estatal",
+    "la capacidad de decisión política es expresión de ambos principios",
+    "la autonomía solo tiene relevancia administrativa, no política"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La autonomía permite adoptar opciones políticas propias, lo que conecta con el principio democrático."
+},
+
+{
+  id: 43,
+  tema: 1,
+  epigrafe: "2.1",
+  text: "La distribución constitucional de competencias condiciona el Derecho administrativo porque:",
+  options: [
+    "impide la existencia de una parte general común",
+    "reparte funciones legislativas y ejecutivas entre Estado y comunidades autónomas",
+    "atribuye toda la ejecución al Estado"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La Constitución distribuye competencias entre distintos niveles territoriales, afectando a la configuración del Derecho administrativo."
+},
+
+{
+  id: 44,
+  tema: 1,
+  epigrafe: "2.1",
+  text: "Desde el punto de vista competencial, la diferencia entre parte general y parte especial radica en que:",
+  options: [
+    "la parte general corresponde principalmente al Estado y la especial admite mayor diversidad autonómica",
+    "la parte especial es siempre competencia exclusiva estatal",
+    "la parte general carece de relevancia competencial"
+  ],
+  correctIndex: 0,
+  explanation:
+    "La parte general se vincula a títulos competenciales estatales, mientras que la especial presenta mayor reparto."
+},
+
+{
+  id: 45,
+  tema: 1,
+  epigrafe: "2.1",
+  text: "El contenido material del principio de Estado de Derecho en el ámbito administrativo incluye, entre otros:",
+  options: [
+    "la primacía absoluta de la ley formal",
+    "la vinculación a los derechos fundamentales y la tutela judicial efectiva",
+    "la discrecionalidad ilimitada de la Administración"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El Estado de Derecho constitucional incorpora límites materiales y garantías jurisdiccionales."
+},
+
+{
+  id: 46,
+  tema: 1,
+  epigrafe: "2.1",
+  text: "Entre las consecuencias constitucionales derivadas del principio de Estado de Derecho se encuentran:",
+  options: [
+    "la jerarquía normativa, la seguridad jurídica y la interdicción de la arbitrariedad",
+    "la supremacía del reglamento sobre la ley",
+    "la exclusión de la responsabilidad de los poderes públicos"
+  ],
+  correctIndex: 0,
+  explanation:
+    "El principio de Estado de Derecho proyecta múltiples garantías estructurales sobre la actuación administrativa."
+},
+// ==================================================
+// TEMA 1 — EPÍGRAFE 2.2
+// BASES EUROPEAS DEL DERECHO ADMINISTRATIVO
+// (Preguntas 47–60)
+// ==================================================
+
+{
+  id: 47,
+  tema: 1,
+  epigrafe: "2.2",
+  text: "El Derecho de la Unión Europea se diferencia del Derecho internacional clásico, entre otros aspectos, porque:",
+  options: [
+    "requiere siempre actos internos de incorporación para producir efectos",
+    "dispone de un sistema propio de producción normativa con incidencia directa en los ordenamientos internos",
+    "se limita a regular relaciones entre Estados sin afectar a los particulares"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El Derecho de la Unión se caracteriza por su sistema normativo propio y su capacidad de penetración directa en los ordenamientos nacionales."
+},
+
+{
+  id: 48,
+  tema: 1,
+  epigrafe: "2.2",
+  text: "El principio de primacía del Derecho de la Unión implica que:",
+  options: [
+    "las normas de la Unión sustituyen automáticamente a las normas internas",
+    "las normas internas incompatibles deben dejar de aplicarse en el ámbito del Derecho de la Unión",
+    "el Derecho de la Unión solo prevalece sobre normas reglamentarias"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La primacía comporta el desplazamiento de la norma interna incompatible, no su derogación automática."
+},
+
+{
+  id: 49,
+  tema: 1,
+  epigrafe: "2.2",
+  text: "El principio de efecto directo del Derecho de la Unión supone que:",
+  options: [
+    "todas las normas europeas producen efectos sin excepción",
+    "determinadas normas de la Unión pueden aplicarse sin necesidad de actos internos de incorporación",
+    "las normas europeas requieren siempre desarrollo legislativo interno"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El efecto directo permite la aplicación inmediata de ciertas normas europeas cuando cumplen los requisitos establecidos por la jurisprudencia."
+},
+
+{
+  id: 50,
+  tema: 1,
+  epigrafe: "2.2",
+  text: "Cuando una norma interna es incompatible con el Derecho de la Unión, los jueces nacionales deben:",
+  options: [
+    "plantear necesariamente cuestión de inconstitucionalidad",
+    "inaplicar la norma interna sin esperar a su eliminación por otra vía",
+    "aplicar la norma interna hasta que sea anulada"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Conforme a la jurisprudencia del TJUE, los jueces deben inaplicar la norma interna incompatible por su propia iniciativa."
+},
+
+{
+  id: 51,
+  tema: 1,
+  epigrafe: "2.2",
+  text: "La integración del Derecho de la Unión afecta al reparto interno de competencias porque:",
+  options: [
+    "refuerza por igual a todos los poderes del Estado",
+    "reduce competencias internas y fortalece el papel del Gobierno en el ámbito europeo",
+    "traslada la totalidad de competencias al poder judicial"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La cesión competencial debilita a los poderes internos en general, aunque el Gobierno adquiere un papel central en la dirección europea."
+},
+
+{
+  id: 52,
+  tema: 1,
+  epigrafe: "2.2",
+  text: "La doctrina Simmenthal establece que:",
+  options: [
+    "solo el Tribunal Constitucional puede controlar la compatibilidad con el Derecho de la Unión",
+    "cualquier órgano judicial debe inaplicar normas internas incompatibles con el Derecho de la Unión",
+    "la inaplicación solo procede respecto de normas reglamentarias"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La doctrina Simmenthal sitúa a todos los jueces en plano de igualdad para el control de compatibilidad con el Derecho de la Unión."
+},
+
+{
+  id: 53,
+  tema: 1,
+  epigrafe: "2.2",
+  text: "El control de compatibilidad con el Derecho de la Unión no es exclusivo del Tribunal Constitucional porque:",
+  options: [
+    "la Constitución excluye expresamente dicho control",
+    "la primacía y el efecto directo habilitan a todos los jueces para inaplicar normas incompatibles",
+    "el Tribunal Constitucional carece de competencia jurisdiccional"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El sistema europeo permite a cualquier juez inaplicar normas internas incompatibles con el Derecho de la Unión."
+},
+
+{
+  id: 54,
+  tema: 1,
+  epigrafe: "2.2",
+  text: "El impacto general del Derecho de la Unión sobre el Derecho administrativo se caracteriza por:",
+  options: [
+    "limitarse al ámbito económico",
+    "actuar como un factor de modernización e innovación normativa",
+    "eliminar las potestades administrativas nacionales"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La influencia europea se ha extendido progresivamente a múltiples ámbitos administrativos, impulsando cambios estructurales."
+},
+
+{
+  id: 55,
+  tema: 1,
+  epigrafe: "2.2",
+  text: "Los procesos de instrumentalización del Derecho administrativo se producen cuando:",
+  options: [
+    "el Derecho de la Unión sustituye completamente a los procedimientos internos",
+    "los instrumentos internos se utilizan para asegurar la efectividad del Derecho de la Unión",
+    "las instituciones europeas ejecutan directamente todas las políticas"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El Derecho interno se pone al servicio de la ejecución del Derecho de la Unión mediante normas y procedimientos nacionales."
+},
+
+{
+  id: 56,
+  tema: 1,
+  epigrafe: "2.2",
+  text: "Los principios de equivalencia y efectividad condicionan la autonomía procesal de los Estados miembros en cuanto:",
+  options: [
+    "impiden la aplicación de cualquier norma procesal interna",
+    "exigen que las normas internas no hagan imposible o excesivamente difícil la ejecución del Derecho de la Unión",
+    "permiten establecer procedimientos menos garantistas"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La autonomía procesal existe, pero queda limitada por la necesidad de garantizar la efectividad del Derecho de la Unión."
+},
+
+{
+  id: 57,
+  tema: 1,
+  epigrafe: "2.2",
+  text: "La europeización introduce tensiones en el principio de legalidad administrativa porque:",
+  options: [
+    "elimina la aplicación del Derecho interno",
+    "obliga a las Administraciones a atender simultáneamente al Derecho interno y al Derecho de la Unión",
+    "refuerza el principio de jerarquía normativa interna"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La Administración debe conciliar la aplicación del Derecho interno con las exigencias del Derecho de la Unión."
+},
+
+{
+  id: 58,
+  tema: 1,
+  epigrafe: "2.2",
+  text: "Los procesos de reorientación del Derecho administrativo aluden a:",
+  options: [
+    "cambios organizativos sin impacto normativo",
+    "transformaciones sustantivas inducidas por el Derecho de la Unión en sectores materiales",
+    "la sustitución del Derecho administrativo por el Derecho privado"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El Derecho de la Unión introduce cambios materiales que acaban proyectándose sobre categorías generales."
+},
+
+{
+  id: 59,
+  tema: 1,
+  epigrafe: "2.2",
+  text: "En materia de contratación pública, la influencia del Derecho de la Unión se manifiesta principalmente en:",
+  options: [
+    "la supresión de prerrogativas administrativas",
+    "el refuerzo de la transparencia, objetividad y no discriminación en la fase de preparación y adjudicación",
+    "la unificación absoluta de los regímenes contractuales nacionales"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La contratación pública se reorienta hacia la garantía del mercado interior y la libre competencia."
+},
+
+{
+  id: 60,
+  tema: 1,
+  epigrafe: "2.2",
+  text: "La tendencia expansiva de la influencia europea más allá de los ámbitos iniciales se explica, entre otras razones, por:",
+  options: [
+    "la existencia de un final predeterminado del proceso de integración",
+    "la interpretación teleológica de las competencias de la Unión y las reformas de los Tratados",
+    "la renuncia de los Estados a sus tradiciones administrativas"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La integración europea es un proceso abierto, con ampliación progresiva de competencias y objetivos."
+},
+// ==================================================
+// TEMA 1 — EPÍGRAFE 3.1
+// DUALIDAD DERECHO ADMINISTRATIVO / DERECHO PRIVADO
+// (Preguntas 61–70)
+// ==================================================
+
+{
+  id: 61,
+  tema: 1,
+  epigrafe: "3.1",
+  text: "La dualidad entre Derecho público y Derecho privado en Europa continental se explica, en términos generales, por:",
+  options: [
+    "la distinta naturaleza de los sujetos que intervienen en las relaciones jurídicas",
+    "las diferentes formas históricas de sometimiento del poder al Derecho",
+    "la separación constitucional entre funciones legislativas y ejecutivas"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La dualidad responde al modo en que cada sistema jurídico ha articulado el sometimiento del poder público al Derecho, no a una mera distinción subjetiva."
+},
+
+{
+  id: 62,
+  tema: 1,
+  epigrafe: "3.1",
+  text: "El modelo francés de Derecho administrativo se caracteriza históricamente por:",
+  options: [
+    "someter la actuación administrativa al Derecho común y a los jueces ordinarios",
+    "excluir a los jueces ordinarios del control de la Administración y desarrollar un Derecho propio",
+    "considerar el Derecho privado como régimen general supletorio de la Administración"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La interpretación francesa de la separación de poderes condujo a la creación de un Derecho administrativo autónomo y de una jurisdicción específica."
+},
+
+{
+  id: 63,
+  tema: 1,
+  epigrafe: "3.1",
+  text: "La concepción alemana del Derecho privado como complementario del Derecho público implica que:",
+  options: [
+    "el Derecho privado solo se aplica por remisión expresa del legislador",
+    "el Derecho privado actúa como Derecho común supletorio cuando falta regulación administrativa",
+    "la Administración carece de prerrogativas públicas en su actividad patrimonial"
+  ],
+  correctIndex: 1,
+  explanation:
+    "En el modelo alemán, el Derecho privado cumple una función supletoria natural cuando no existe una regulación administrativa específica."
+},
+
+{
+  id: 64,
+  tema: 1,
+  epigrafe: "3.1",
+  text: "El surgimiento del Derecho administrativo en España se produce:",
+  options: [
+    "como ruptura radical con el Derecho privado tras la Revolución francesa",
+    "por evolución progresiva bajo influencia francesa en el siglo XIX",
+    "como consecuencia directa de la Constitución de 1978"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El Derecho administrativo español se desarrolla de forma evolutiva, en paralelo al crecimiento de la Administración y bajo influencia del modelo francés."
+},
+
+{
+  id: 65,
+  tema: 1,
+  epigrafe: "3.1",
+  text: "La consideración tradicional del Derecho privado como ajeno a la Administración se explica porque:",
+  options: [
+    "la Administración carece de personalidad jurídica privada",
+    "el Derecho administrativo se concibe como Derecho propio de la Administración",
+    "el Derecho privado es incompatible con el interés general"
+  ],
+  correctIndex: 1,
+  explanation:
+    "En la tradición francesa y española, el Derecho administrativo se configura como Derecho propio de la Administración, lo que explica la reticencia al uso del Derecho privado."
+},
+
+{
+  id: 66,
+  tema: 1,
+  epigrafe: "3.1",
+  text: "La Administración puede actuar conforme al Derecho privado, entre otros supuestos, cuando:",
+  options: [
+    "ejercita potestades administrativas típicas",
+    "realiza actividades logísticas, empresariales o contrata personal laboral",
+    "desarrolla funciones de orden público o recaudación tributaria"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Existen ámbitos en los que la Administración actúa conforme al Derecho privado por elección o necesidad, al no tratarse de actividades típicamente públicas."
+},
+
+{
+  id: 67,
+  tema: 1,
+  epigrafe: "3.1",
+  text: "La distinción entre bienes demaniales y bienes patrimoniales de la Administración radica principalmente en que:",
+  options: [
+    "ambos se rigen íntegramente por el Derecho administrativo",
+    "los bienes demaniales están sujetos a un régimen administrativo especial y los patrimoniales al Derecho privado",
+    "los bienes patrimoniales no pueden ser enajenados"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Los bienes demaniales se someten a un régimen administrativo especial, mientras que los patrimoniales se rigen mayoritariamente por el Derecho privado."
+},
+
+{
+  id: 68,
+  tema: 1,
+  epigrafe: "3.1",
+  text: "La iniciativa pública en la actividad económica, conforme al Derecho de la Unión Europea, se caracteriza por:",
+  options: [
+    "permitir privilegios administrativos frente a operadores privados",
+    "exigir la actuación en condiciones de igualdad y sin privilegios, salvo excepciones tasadas",
+    "quedar excluida del control europeo"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El Derecho de la Unión impone la igualdad de condiciones en la actividad económica pública, admitiendo solo excepciones justificadas."
+},
+
+{
+  id: 69,
+  tema: 1,
+  epigrafe: "3.1",
+  text: "La elección entre Derecho público o Derecho privado por la Administración tiene consecuencias procesales porque:",
+  options: [
+    "determina siempre la nulidad de los actos administrativos",
+    "condiciona la jurisdicción competente y los medios de ejecución forzosa",
+    "modifica el régimen de responsabilidad patrimonial"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La elección del régimen jurídico influye en la jurisdicción competente y en los instrumentos de ejecución, pero no en la responsabilidad patrimonial."
+},
+
+{
+  id: 70,
+  tema: 1,
+  epigrafe: "3.1",
+  text: "La unidad del régimen de responsabilidad patrimonial de la Administración se explica porque:",
+  options: [
+    "depende del tipo de contrato celebrado",
+    "es independiente del régimen jurídico aplicable a la actuación administrativa",
+    "solo se aplica cuando la Administración actúa con Derecho público"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La responsabilidad patrimonial es unitaria con independencia de que la Administración actúe conforme al Derecho público o privado."
+},
+// ==================================================
+// TEMA 1 — EPÍGRAFE 3.2
+// ELECCIÓN DEL RÉGIMEN JURÍDICO DE LA ACTUACIÓN ADMINISTRATIVA
+// (Preguntas 71–85)
+// ==================================================
+
+{
+  id: 71,
+  tema: 1,
+  epigrafe: "3.2",
+  text: "La posibilidad de que la Administración elija entre Derecho público y Derecho privado al actuar materialmente se entiende, con carácter general, como:",
+  options: [
+    "una facultad discrecional plena, salvo prohibición expresa",
+    "una capacidad condicionada por el legislador y por la naturaleza de la actividad",
+    "una opción libre en todo caso cuando se trate de prestación de servicios"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La elección no es libre: depende del marco legal y de si la actividad es necesariamente pública, necesariamente privada o admite margen en servicios y fomento."
+},
+
+{
+  id: 72,
+  tema: 1,
+  epigrafe: "3.2",
+  text: "Entre las actividades que, por regla general, exigen actuación conforme al Derecho público se incluyen:",
+  options: [
+    "las logísticas y empresariales por su necesidad de flexibilidad",
+    "la recaudación de tributos y la limitación de derechos, por su vinculación a potestades públicas",
+    "la contratación de personal laboral y la gestión patrimonial ordinaria"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Las actividades que implican potestades públicas (tributos, orden público, limitación de derechos) son típicamente necesariamente públicas."
+},
+
+{
+  id: 73,
+  tema: 1,
+  epigrafe: "3.2",
+  text: "El margen de elección entre Derecho público y privado aparece principalmente en:",
+  options: [
+    "la ordenación y supervisión de actividades privadas por su carácter técnico",
+    "las actividades de servicio público y de fomento, cuando la regulación jurídico-pública es incompleta",
+    "la seguridad ciudadana y el mantenimiento del orden público"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El texto sitúa el margen de elección sobre todo en servicio público y fomento, donde la regulación puede ser menos cerrada."
+},
+
+{
+  id: 74,
+  tema: 1,
+  epigrafe: "3.2",
+  text: "En la configuración de la elección del régimen jurídico, la regla de partida es que:",
+  options: [
+    "la Administración decide y el legislador se limita a controlar ex post",
+    "es el legislador quien reconoce, limita o condiciona la capacidad de elección",
+    "la jurisprudencia define de forma principal los supuestos de opción"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El marco decisivo lo fija el legislador: la Administración opera dentro de modelos configurados legalmente."
+},
+
+{
+  id: 75,
+  tema: 1,
+  epigrafe: "3.2",
+  text: "El legislador modula la elección del régimen jurídico, entre otros momentos, cuando:",
+  options: [
+    "la Administración decide crear una entidad sin necesidad de habilitación normativa",
+    "regula un sector, fija el régimen de entidades dependientes o crea por ley una entidad de Derecho público",
+    "un órgano administrativo opta por el contrato privado frente al administrativo"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La modulación se produce en el diseño normativo: sector de actividad, régimen de entes vinculados y creación legal de entidades públicas."
+},
+
+{
+  id: 76,
+  tema: 1,
+  epigrafe: "3.2",
+  text: "Con carácter general, la diferencia típica entre entidades de Derecho público y de Derecho privado del sector público institucional se expresa en que:",
+  options: [
+    "las primeras se rigen solo por Derecho privado y las segundas por Derecho administrativo",
+    "las primeras tienden a regirse por Derecho administrativo y las segundas por Derecho privado, con modulaciones legales",
+    "ambas quedan siempre sometidas íntegramente a la LPAC y la LRJSP"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La regla general es DA para entes públicos y DP para entes privados, pero el legislador introduce excepciones y núcleos administrativos."
+},
+
+{
+  id: 77,
+  tema: 1,
+  epigrafe: "3.2",
+  text: "La libertad de elección administrativa queda doblemente limitada, entre otros motivos, porque:",
+  options: [
+    "permite elegir cualquier régimen jurídico, pero solo dentro del sector público estatal",
+    "solo alcanza a ciertas personificaciones y no permite elegir libremente, sino entre modelos cerrados definidos por la ley",
+    "solo opera cuando la actividad sea necesariamente pública"
+  ],
+  correctIndex: 1,
+  explanation:
+    "No hay 'menú libre': la elección se da dentro de formas organizativas legalmente tipificadas y con restricciones sobre qué se puede crear y cómo."
+},
+
+{
+  id: 78,
+  tema: 1,
+  epigrafe: "3.2",
+  text: "Cuando la Administración actúa mediante fórmulas de Derecho privado, la consecuencia general respecto del Derecho administrativo es que:",
+  options: [
+    "queda completamente desplazado si el ente no es Administración pública",
+    "no puede excluirse por completo: subsisten ámbitos sometidos a reglas administrativas por decisión legal o por el tipo de función",
+    "solo se aplica si existe una remisión expresa a la LRJSP en la norma de creación"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El Derecho administrativo no desaparece sin más: la ley y el ejercicio de potestades o ámbitos regulados reintroducen sujeción administrativa."
+},
+
+{
+  id: 79,
+  tema: 1,
+  epigrafe: "3.2",
+  text: "Si una entidad de Derecho privado vinculada o dependiente ejerce potestades administrativas, su actuación queda, en lo esencial:",
+  options: [
+    "sometida al Derecho privado por su forma jurídico-privada",
+    "sometida al Derecho administrativo en ese ejercicio, con independencia de su forma",
+    "exenta de control contencioso por no integrarse en la Administración pública"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El criterio funcional central es el ejercicio de potestades administrativas, que atrae sujeción al Derecho administrativo y control correspondiente."
+},
+
+{
+  id: 80,
+  tema: 1,
+  epigrafe: "3.2",
+  text: "En el ámbito local, la capacidad de elección organizativa mediante personificaciones instrumentales se encuentra, en general:",
+  options: [
+    "ampliada, por la autonomía local reconocida constitucionalmente",
+    "más restringida, por exigencias de sostenibilidad financiera y eficiencia",
+    "suprimida, por prohibición de creación de entes instrumentales"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El texto destaca restricciones en el ámbito local: sostenibilidad financiera y eficiencia, con preferencias justificadas por informes y memorias."
+},
+
+{
+  id: 81,
+  tema: 1,
+  epigrafe: "3.2",
+  text: "La creación de personificaciones instrumentales como técnica organizativa se conecta, según el texto, con:",
+  options: [
+    "la garantía institucional de un núcleo indisponible de Derecho administrativo",
+    "el mandato constitucional de eficacia administrativa y la configuración legal de modalidades de actuación",
+    "la imposibilidad de actuación administrativa mediante instrumentos privados"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La razón estructural es la eficacia: corresponde al legislador diseñar formas y combinaciones de actuación para cumplir ese mandato."
+},
+
+{
+  id: 82,
+  tema: 1,
+  epigrafe: "3.2",
+  text: "La referencia a eficiencia y sostenibilidad financiera en el ámbito local opera principalmente como:",
+  options: [
+    "un criterio político sin relevancia jurídica organizativa",
+    "un condicionante que restringe la elección y exige justificación de determinadas opciones",
+    "un principio que habilita a elegir siempre Derecho privado por ser más flexible"
+  ],
+  correctIndex: 1,
+  explanation:
+    "No es retórica: actúa como límite y condiciona la creación/elección de formas, imponiendo exigencias de justificación."
+},
+
+{
+  id: 83,
+  tema: 1,
+  epigrafe: "3.2",
+  text: "Que las entidades de Derecho privado del sector público institucional no sean Administraciones públicas significa, en general, que:",
+  options: [
+    "quedan fuera del sector público y del control público",
+    "no tienen, por su sola forma, el estatuto subjetivo de Administración, aunque pueden quedar sujetas a reglas administrativas por criterios funcionales",
+    "sus actos se consideran siempre actos administrativos sujetos a la LPAC"
+  ],
+  correctIndex: 1,
+  explanation:
+    "No son Administraciones públicas, pero pueden estar sometidas a núcleos administrativos o al DA cuando ejercen potestades o la norma lo disponga."
+},
+
+{
+  id: 84,
+  tema: 1,
+  epigrafe: "3.2",
+  text: "La elección del régimen jurídico por la Administración produce efectos, entre otros, sobre:",
+  options: [
+    "la determinación del orden jurisdiccional competente y los instrumentos de ejecución",
+    "la inaplicación automática de las normas presupuestarias",
+    "la pérdida del carácter público de los fines perseguidos"
+  ],
+  correctIndex: 0,
+  explanation:
+    "El texto subraya consecuencias procesales e instrumentales (jurisdicción y ejecución), no la desaparición de controles presupuestarios ni del fin público."
+},
+
+{
+  id: 85,
+  tema: 1,
+  epigrafe: "3.2",
+  text: "La combinación de regímenes jurídicos en entidades del sector público se articula, con carácter general, porque:",
+  options: [
+    "la forma pública implica siempre Derecho administrativo íntegro y la privada Derecho privado íntegro",
+    "el legislador introduce modulaciones: reglas administrativas para formación de voluntad, potestades y ámbitos expresamente regulados, aunque predomine un régimen",
+    "las entidades privadas quedan sometidas solo a control político, no jurídico"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La regla no es 'todo o nada': hay predominio de un régimen, pero con islas administrativas en puntos clave fijados por la ley."
+},
+// ==================================================
+// TEMA 1 — EPÍGRAFE 3.3
+// LÍMITES MATERIALES AL USO DEL DERECHO PRIVADO
+// (Preguntas 86–100)
+// ==================================================
+
+{
+  id: 86,
+  tema: 1,
+  epigrafe: "3.3",
+  text: "La denominada “huida del Derecho administrativo” se produce cuando la Administración:",
+  options: [
+    "opta por fórmulas de Derecho privado para desarrollar actividades administrativas con mayor flexibilidad",
+    "sustituye de forma sistemática el control jurisdiccional por mecanismos privados",
+    "actúa exclusivamente mediante entidades privadas sin habilitación legal"
+  ],
+  correctIndex: 0,
+  explanation:
+    "La huida alude al uso de formas privadas para actividades administrativas, especialmente a través de personificaciones instrumentales, buscando flexibilidad."
+},
+
+{
+  id: 87,
+  tema: 1,
+  epigrafe: "3.3",
+  text: "El recurso al Derecho privado resulta jurídicamente cuestionable cuando:",
+  options: [
+    "persigue la elusión de controles administrativos y de garantías para los ciudadanos",
+    "se emplea para actividades logísticas o empresariales",
+    "se utiliza por razones de eficiencia organizativa"
+  ],
+  correctIndex: 0,
+  explanation:
+    "El problema surge cuando el uso del Derecho privado se orienta a soslayar controles y garantías propias del interés general."
+},
+
+{
+  id: 88,
+  tema: 1,
+  epigrafe: "3.3",
+  text: "Frente a la huida del Derecho administrativo, las estrategias planteadas doctrinalmente fueron:",
+  options: [
+    "la supresión de personificaciones instrumentales y la centralización administrativa",
+    "la garantía institucional del Derecho administrativo y el refuerzo de la sujeción administrativa",
+    "la ampliación ilimitada del margen de elección administrativa"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Se barajaron dos vías: blindar institucionalmente el Derecho administrativo o reforzar la sujeción administrativa de las actuaciones privadas."
+},
+
+{
+  id: 89,
+  tema: 1,
+  epigrafe: "3.3",
+  text: "La garantía institucional del Derecho administrativo fue descartada principalmente porque:",
+  options: [
+    "impedía cualquier control jurisdiccional de la Administración",
+    "rigidizaba en exceso al legislador y reducía el margen democrático",
+    "resultaba incompatible con el principio de legalidad"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Se consideró una solución excesivamente rígida, incompatible con la dinámica del Derecho administrativo y del Derecho de la Unión."
+},
+
+{
+  id: 90,
+  tema: 1,
+  epigrafe: "3.3",
+  text: "El refuerzo de la sujeción administrativa consiste, esencialmente, en:",
+  options: [
+    "extender de forma general el Derecho privado a toda la actuación administrativa",
+    "someter a normas administrativas determinadas actuaciones y ámbitos, con independencia de la forma jurídica",
+    "reservar el Derecho administrativo solo a las Administraciones territoriales"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La opción seguida refuerza la aplicación de normas administrativas allí donde existan razones funcionales o de garantía."
+},
+
+{
+  id: 91,
+  tema: 1,
+  epigrafe: "3.3",
+  text: "El régimen jurídico aplicable a la actuación administrativa queda fijado, con carácter general, por:",
+  options: [
+    "la propia Administración en ejercicio de su autonomía organizativa",
+    "el legislador, al regular las formas organizativas y los ámbitos de actuación",
+    "la jurisprudencia contencioso-administrativa de forma preferente"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Es el legislador quien encuadra y determina el régimen jurídico aplicable, no la Administración por decisión unilateral."
+},
+
+{
+  id: 92,
+  tema: 1,
+  epigrafe: "3.3",
+  text: "Las potestades administrativas no pueden ejercerse conforme al Derecho privado porque:",
+  options: [
+    "carecen de respaldo constitucional",
+    "exigen sometimiento pleno al Derecho administrativo",
+    "solo pueden atribuirse a órganos constitucionales"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El ejercicio de potestades públicas está íntegramente sujeto al Derecho administrativo, sin opción por el régimen privado."
+},
+
+{
+  id: 93,
+  tema: 1,
+  epigrafe: "3.3",
+  text: "Las funciones que implican ejercicio de potestades públicas o salvaguarda de intereses generales están reservadas a:",
+  options: [
+    "personal laboral del sector público",
+    "funcionarios públicos",
+    "entidades privadas colaboradoras"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La reserva funcionarial garantiza imparcialidad y sometimiento a principios propios del Derecho público."
+},
+
+{
+  id: 94,
+  tema: 1,
+  epigrafe: "3.3",
+  text: "El uso del Derecho privado por la Administración no amplía sus competencias porque:",
+  options: [
+    "las competencias derivan exclusivamente del Derecho privado",
+    "la Administración solo puede actuar dentro de su ámbito competencial y para fines propios",
+    "las entidades privadas carecen de capacidad jurídica"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El régimen jurídico elegido no altera el marco competencial previamente fijado."
+},
+
+{
+  id: 95,
+  tema: 1,
+  epigrafe: "3.3",
+  text: "Los derechos fundamentales vinculan a la Administración incluso cuando actúa conforme al Derecho privado porque:",
+  options: [
+    "solo se aplican a las Administraciones territoriales",
+    "vinculan a todos los poderes públicos con independencia del régimen jurídico utilizado",
+    "se limitan a la actuación reglamentaria"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La sujeción a los derechos fundamentales es transversal y no depende del régimen jurídico elegido."
+},
+
+{
+  id: 96,
+  tema: 1,
+  epigrafe: "3.3",
+  text: "Las normas de estabilidad presupuestaria y endeudamiento operan como límite porque:",
+  options: [
+    "atienden a la forma privada de la entidad",
+    "se aplican en atención al origen público de los fondos",
+    "solo afectan a las Administraciones territoriales"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El límite se conecta con la procedencia pública de los recursos, no con la forma jurídica."
+},
+
+{
+  id: 97,
+  tema: 1,
+  epigrafe: "3.3",
+  text: "Incluso las entidades privadas del sector público quedan sometidas, al menos, a:",
+  options: [
+    "un núcleo mínimo de Derecho administrativo en materias como presupuestos, contratación y transparencia",
+    "exclusivamente al Derecho mercantil",
+    "control político sin control jurídico"
+  ],
+  correctIndex: 0,
+  explanation:
+    "Existe un núcleo mínimo administrativo aplicable por razones de control y garantía del interés general."
+},
+
+{
+  id: 98,
+  tema: 1,
+  epigrafe: "3.3",
+  text: "Los denominados “actos separables” se caracterizan porque:",
+  options: [
+    "son siempre actos privados excluidos del control jurisdiccional",
+    "quedan sometidos al Derecho administrativo y al control contencioso pese a producirse en contextos privados",
+    "solo pueden dictarse por Administraciones territoriales"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Determinados actos se separan del régimen privado y se someten al Derecho administrativo por su contenido funcional."
+},
+
+{
+  id: 99,
+  tema: 1,
+  epigrafe: "3.3",
+  text: "El control contencioso-administrativo de actos dictados en contextos privados implica que:",
+  options: [
+    "se extiende el control judicial a cualquier actuación privada",
+    "se controla el ejercicio de funciones o potestades administrativas con independencia de la forma",
+    "se revisan únicamente los contratos privados"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El control se activa por el ejercicio de funciones públicas, no por la forma jurídica empleada."
+},
+
+{
+  id: 100,
+  tema: 1,
+  epigrafe: "3.3",
+  text: "El denominado Derecho privado singular de la Administración se define como:",
+  options: [
+    "una aplicación pura del Derecho civil común",
+    "un Derecho privado modulado por la Constitución y la posición jurídica especial de la Administración",
+    "una excepción sin relevancia sistemática"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Se trata de un Derecho privado adaptado a la condición pública de la Administración y a las exigencias constitucionales."
+},
+
+// ============================================
+// TEMA 2 – FUENTES LEGALES Y SUPRALEGALES
+// EPÍGRAFE 1. INTRODUCCIÓN
+// (IDs desde 101)
+// ============================================
+
+// ===============================
+// TEMA 2 · EPÍGRAFE 1 — INTRODUCCIÓN
+// ===============================
+
+{
+  id: 101,
+  tema: 2,
+  epigrafe: "1",
+  text: "Cuando una norma estatal entra en conflicto con una norma de origen externo ya integrada en el ordenamiento (Derecho de la UE o tratado internacional), ¿qué criterio determina cuál debe aplicarse con preferencia?",
+  options: [
+    "El principio de jerarquía normativa interna fijado por el Código Civil",
+    "La posición que la Constitución atribuye a cada fuente dentro del sistema de fuentes",
+    "La fecha de aprobación de la norma más reciente"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Las normas de origen externo integradas (UE o tratados) se aplican con preferencia conforme al sistema de fuentes definido por la Constitución, no por criterios internos de jerarquía ni por cronología."
+},
+
+{
+  id: 102,
+  tema: 2,
+  epigrafe: "1",
+  text: "Si una ley contiene mandatos individualizados en lugar de normas generales y abstractas, ¿qué efecto produce esa circunstancia sobre su rango en el sistema de fuentes?",
+  options: [
+    "Pierde su rango legal y se asimila a un acto administrativo singular",
+    "Mantiene su rango legal aunque su contenido no sea normativo en sentido material",
+    "Debe considerarse inválida por vulnerar el principio de legalidad"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Desde la perspectiva material, una ley puede contener mandatos individualizados sin perder su rango. En las fuentes legales y supralegales, el rango no depende del contenido normativo."
+},
+
+{
+  id: 103,
+  tema: 2,
+  epigrafe: "1",
+  text: "En el Derecho administrativo, ¿qué consecuencia práctica tiene el predominio de las fuentes escritas frente a las no escritas?",
+  options: [
+    "Refuerza los principios de legalidad y seguridad jurídica en la producción normativa",
+    "Elimina por completo la aplicación de la costumbre y los principios generales",
+    "Reduce la intervención del legislador en favor de la Administración"
+  ],
+  correctIndex: 0,
+  explanation:
+    "El predominio de fuentes escritas está vinculado a la legalidad y a la seguridad jurídica, ya que las fuentes no escritas no siempre garantizan una producción normativa clara y controlable."
+},
+
+{
+  id: 104,
+  tema: 2,
+  epigrafe: "1",
+  text: "Cuando un mismo texto jurídico se utiliza para una decisión singular que no produce Derecho, ¿qué problema se plantea desde la distinción entre perspectiva formal y material de las fuentes?",
+  options: [
+    "Que la forma normativa deja automáticamente de ser fuente del Derecho",
+    "Que se produce una separación entre la forma empleada y la capacidad real de producir normas",
+    "Que la decisión singular adquiere rango normativo por utilizar una forma legal"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Desde la perspectiva formal puede utilizarse una forma normativa, pero materialmente no se produce Derecho. Esto evidencia la diferencia entre forma de producción y capacidad normativa efectiva."
+},
+// ============================================
+// TEMA 2 – FUENTES LEGALES Y SUPRALEGALES
+// EPÍGRAFE 2. LA CONSTITUCIÓN (8 PREGUNTAS)
+// ============================================
+
+{
+  id: 107,
+  tema: 2,
+  epigrafe: "2",
+  text: "Desde la perspectiva formal, la supremacía de la Constitución se manifiesta en que:",
+  options: [
+    "puede ser modificada por leyes posteriores de igual rango",
+    "solo puede ser reformada conforme a los procedimientos constitucionales",
+    "queda subordinada a la voluntad mayoritaria del Parlamento"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La supremacía formal implica que la Constitución solo puede ser modificada mediante los procedimientos de reforma previstos en ella misma, y no por normas de rango inferior."
+},
+
+{
+  id: 108,
+  tema: 2,
+  epigrafe: "2",
+  text: "La supremacía material de la Constitución implica, entre otros efectos, que:",
+  options: [
+    "toda norma incompatible queda automáticamente anulada",
+    "las normas preconstitucionales incompatibles quedan derogadas de forma inmediata",
+    "las normas posteriores incompatibles pierden vigencia sin control jurisdiccional"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Las normas preconstitucionales incompatibles quedan derogadas de forma inmediata, mientras que las posteriores requieren declaración de inconstitucionalidad por el Tribunal Constitucional."
+},
+
+{
+  id: 109,
+  tema: 2,
+  epigrafe: "2",
+  text: "La afirmación de que la Constitución es “norma de normas” significa que:",
+  options: [
+    "deroga directamente cualquier norma infraconstitucional",
+    "define la validez y jerarquía del resto de normas del ordenamiento",
+    "sustituye a la ley como fuente ordinaria del Derecho"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La Constitución determina el sistema de fuentes y de ella deriva la validez y posición jerárquica de todas las normas del ordenamiento."
+},
+
+{
+  id: 110,
+  tema: 2,
+  epigrafe: "2",
+  text: "La obligación de interpretar las normas conforme a la Constitución deriva principalmente de:",
+  options: [
+    "la supremacía material y la unidad del ordenamiento jurídico",
+    "la función creadora de la jurisprudencia constitucional",
+    "el principio de jerarquía normativa en sentido estricto"
+  ],
+  correctIndex: 0,
+  explanation:
+    "La interpretación conforme es consecuencia de la supremacía constitucional y de la unidad del ordenamiento, que exige armonizar todas las normas con la Constitución."
+},
+
+{
+  id: 111,
+  tema: 2,
+  epigrafe: "2",
+  text: "La sujeción de los ciudadanos y poderes públicos a la Constitución se diferencia de la sujeción al resto del ordenamiento porque:",
+  options: [
+    "la Constitución solo vincula a los poderes públicos",
+    "la Constitución actúa como límite directo del ejercicio del poder",
+    "la Constitución requiere siempre desarrollo legal para ser aplicable"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La Constitución vincula directamente a ciudadanos y poderes públicos y actúa como límite inmediato del ejercicio del poder, incluso sin mediación legislativa."
+},
+
+{
+  id: 112,
+  tema: 2,
+  epigrafe: "2",
+  text: "En relación con las normas posteriores incompatibles con la Constitución, la supremacía constitucional comporta que:",
+  options: [
+    "cualquier juez puede declararlas nulas",
+    "su inconstitucionalidad debe ser declarada por el Tribunal Constitucional",
+    "pierdan eficacia automáticamente tras su publicación"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Las normas posteriores incompatibles con la Constitución solo pueden ser expulsadas del ordenamiento mediante declaración del Tribunal Constitucional."
+},
+
+{
+  id: 113,
+  tema: 2,
+  epigrafe: "2",
+  text: "Que la Constitución determine el sistema de fuentes implica que:",
+  options: [
+    "la jerarquía normativa se fija exclusivamente por la ley",
+    "la validez y posición de cada norma derivan directamente de la Constitución",
+    "el sistema de fuentes queda cerrado a normas de origen externo"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La Constitución es el fundamento último de la validez y jerarquía de todas las normas, incluidas las de origen supranacional integradas en el ordenamiento."
+},
+
+{
+  id: 114,
+  tema: 2,
+  epigrafe: "2",
+  text: "Desde el punto de vista del Derecho administrativo, la supremacía constitucional implica que la actuación administrativa:",
+  options: [
+    "queda sometida únicamente a la ley en sentido formal",
+    "debe respetar directamente la Constitución incluso sin desarrollo legal",
+    "solo puede ser controlada por el Tribunal Constitucional"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La Administración está directamente sujeta a la Constitución, lo que permite controlar su actuación incluso cuando no exista desarrollo legal expreso."
+},
+//· EPÍGRAFE 3.1 — LA LEY: CONCEPTO (IDs 115–121)
+
+{
+  id: 115,
+  tema: 2,
+  epigrafe: "3.1",
+  text: "Cuando una ley contiene una regulación dirigida a un supuesto concreto y no presenta carácter general ni abstracto, ¿qué consecuencia jurídica se deriva respecto de su validez y de su control?",
+  options: [
+    "La ley es inválida por vulnerar el principio de generalidad normativa",
+    "La ley es válida y su control corresponde exclusivamente al Tribunal Constitucional",
+    "La regulación debe calificarse como acto administrativo impugnable ante la jurisdicción contencioso-administrativa"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La Constitución no exige que la ley sea general y abstracta. Las leyes singulares son válidas y su control corresponde únicamente al Tribunal Constitucional."
+},
+
+{
+  id: 116,
+  tema: 2,
+  epigrafe: "3.1",
+  text: "En el Estado constitucional de Derecho, el bloque de la constitucionalidad actúa respecto de la ley como:",
+  options: [
+    "Un límite jurídico interno que condiciona la voluntad del legislador",
+    "Un criterio interpretativo de carácter político sin efectos jurídicos directos",
+    "Un parámetro externo equiparable al Derecho de la Unión Europea"
+  ],
+  correctIndex: 0,
+  explanation:
+    "La ley está subordinada a la Constitución y al bloque de la constitucionalidad, que actúa como límite interno de su validez."
+},
+
+{
+  id: 117,
+  tema: 2,
+  epigrafe: "3.1",
+  text: "Cuando el legislador adopta mediante ley una decisión concreta que, en ausencia de ley, correspondería al poder ejecutivo, ¿qué efecto produce esa intervención?",
+  options: [
+    "La decisión queda sometida al régimen jurídico propio de las normas con rango de ley",
+    "La decisión mantiene su naturaleza de acto administrativo singular",
+    "La decisión queda excluida de todo control jurisdiccional ordinario"
+  ],
+  correctIndex: 0,
+  explanation:
+    "Al ser adoptada por ley, la decisión queda sometida al régimen jurídico propio de las normas legales y a su control constitucional."
+},
+
+{
+  id: 118,
+  tema: 2,
+  epigrafe: "3.1",
+  text: "Cuando una ley se limita a habilitar al Gobierno para regular una materia sin establecer una regulación sustantiva, ¿qué técnica normativa se produce y qué límites presenta?",
+  options: [
+    "Una delegación legislativa prohibida en todo caso",
+    "Un supuesto de deslegalización, admisible solo en determinados ámbitos",
+    "Una infracción automática del principio de jerarquía normativa"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La deslegalización supone que la ley renuncia a regular el contenido material y habilita al reglamento, técnica no admisible en todos los ámbitos."
+},
+
+{
+  id: 119,
+  tema: 2,
+  epigrafe: "3.1",
+  text: "¿Cómo inciden los límites externos derivados de la integración supranacional o de la cooperación internacional sobre la potestad legislativa estatal?",
+  options: [
+    "Suprimen la titularidad de la potestad legislativa del Estado",
+    "Condicionan el margen de configuración del legislador",
+    "Sustituyen automáticamente la ley estatal por normas internacionales"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Los límites externos restringen el margen de decisión del legislador, pero no eliminan su potestad normativa."
+},
+
+{
+  id: 120,
+  tema: 2,
+  epigrafe: "3.1",
+  text: "Desde la perspectiva constitucional, ¿qué relevancia tiene la distinción entre ley formal y ley material cuando una ley contiene mandatos individualizados?",
+  options: [
+    "Determina la invalidez constitucional de la ley",
+    "Carece de relevancia constitucional y tiene valor exclusivamente dogmático",
+    "Permite desplazar su control a la jurisdicción contencioso-administrativa"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La distinción ley formal / ley material carece de relevancia constitucional en términos de validez y tiene solo significado dogmático."
+},
+
+{
+  id: 121,
+  tema: 2,
+  epigrafe: "3.1",
+  text: "Si una norma pretende excepcionar una regulación legal general para un supuesto concreto, ¿por qué es necesario que tenga rango de ley?",
+  options: [
+    "Porque un reglamento no puede modificar ni excepcionar una ley",
+    "Porque toda excepción normativa exige mayoría parlamentaria reforzada",
+    "Porque los supuestos singulares están excluidos del ámbito normativo"
+  ],
+  correctIndex: 0,
+  explanation:
+    "Solo una norma con rango de ley puede excepcionar o modular otra ley; el reglamento carece de esa fuerza jurídica."
+},
+//· EPÍGRAFE 3.2 — LEY ORGÁNICA Y LEY ORDINARIA (IDs 122–127)
+
+{
+  id: 122,
+  tema: 2,
+  epigrafe: "3.2",
+  text: "Si una materia está constitucionalmente reservada a ley orgánica y se regula mediante ley ordinaria, ¿qué consecuencia jurídica se produce respecto del precepto aprobado?",
+  options: [
+    "Es inválido por vicio de procedimiento, al haberse eludido la forma constitucionalmente exigida",
+    "Es plenamente válido, pero pierde fuerza frente a una ley orgánica posterior",
+    "Debe entenderse automáticamente con rango orgánico por su contenido material"
+  ],
+  correctIndex: 0,
+  explanation:
+    "La reserva de ley orgánica impone una forma reforzada indisponible: regular esa materia por ley ordinaria supone un vicio de inconstitucionalidad por forma/procedimiento."
+},
+
+{
+  id: 123,
+  tema: 2,
+  epigrafe: "3.2",
+  text: "Cuando una ley orgánica incorpora preceptos sobre materias no reservadas a ella, ¿qué condición exige la doctrina constitucional para que esos preceptos no queden “arrastrados” como orgánicos?",
+  options: [
+    "Que el legislador indique expresamente que esos preceptos carecen de carácter orgánico",
+    "Que esos preceptos se aprueben por mayoría simple en una votación separada",
+    "Que se incorporen como disposición adicional y no como articulado"
+  ],
+  correctIndex: 0,
+  explanation:
+    "Según la concepción material del TC, la forma orgánica es indisponible: si se incluyen materias no reservadas, debe declararse expresamente que no tienen carácter orgánico para evitar el “arrastre”."
+},
+
+{
+  id: 124,
+  tema: 2,
+  epigrafe: "3.2",
+  text: "¿Por qué se rechaza que la ley orgánica sea jerárquicamente superior a la ley ordinaria?",
+  options: [
+    "Porque convertiría la ley orgánica en una vía para petrificar el ordenamiento y restringir la alternancia democrática",
+    "Porque impediría que las Comunidades Autónomas aprueben leyes en cualquier materia",
+    "Porque la Constitución prohíbe expresamente que existan mayorías reforzadas"
+  ],
+  correctIndex: 0,
+  explanation:
+    "La tesis jerárquica llevaría a que una mayoría reforzada “blindara” materias más allá de la reserva constitucional, limitando la alternancia y rigidizando el sistema."
+},
+
+{
+  id: 125,
+  tema: 2,
+  epigrafe: "3.2",
+  text: "Si una ley ordinaria posterior entra en conflicto con un precepto incluido en una ley formalmente orgánica, ¿qué regla práctica opera mientras no exista pronunciamiento del Tribunal Constitucional?",
+  options: [
+    "Prevalece provisionalmente el precepto de la ley formalmente orgánica, salvo declaración del TC",
+    "Se aplica automáticamente la ley ordinaria por ser posterior (lex posterior)",
+    "Debe plantearse cuestión prejudicial ante el TJUE antes de aplicar ninguna"
+  ],
+  correctIndex: 0,
+  explanation:
+    "En la práctica, mientras el TC no declare que un precepto carece de carácter orgánico, la regulación contenida en una ley formalmente orgánica desplaza provisionalmente a la ordinaria."
+},
+
+{
+  id: 126,
+  tema: 2,
+  epigrafe: "3.2",
+  text: "La reserva material de ley orgánica se interpreta restrictivamente, principalmente porque:",
+  options: [
+    "Es una excepción al procedimiento legislativo ordinario y no puede expandirse por razones de conveniencia política",
+    "La ley orgánica siempre requiere referéndum y por eso debe usarse poco",
+    "El Senado tiene un veto absoluto en la aprobación de leyes orgánicas"
+  ],
+  correctIndex: 0,
+  explanation:
+    "Al tratarse de una excepción (mayoría reforzada), su ámbito debe limitarse a lo expresamente previsto por la Constitución, evitando ampliaciones que alteren el reparto competencial y el juego democrático."
+},
+
+{
+  id: 127,
+  tema: 2,
+  epigrafe: "3.2",
+  text: "¿Qué diferencia decisiva existe entre entender la ley orgánica como un mero procedimiento reforzado y entenderla como una forma indisponible ligada a materias reservadas?",
+  options: [
+    "En la concepción de forma indisponible, una ley orgánica no puede “elegirse” para cualquier materia: solo cabe para las constitucionalmente reservadas",
+    "En la concepción procedimental, la ley orgánica tiene rango inferior pero más estabilidad política",
+    "En la concepción de forma indisponible, toda ley ordinaria queda subordinada materialmente a la orgánica"
+  ],
+  correctIndex: 0,
+  explanation:
+    "La clave es que la forma orgánica no es una opción libre del legislador: solo procede cuando la Constitución reserva la materia; fuera de ahí, su uso debe acotarse y, en su caso, “desactivar” el carácter orgánico."
+},
+// 3.3 OTROS TIPOS DE LEYES
+
+{
+  id: 128,
+  tema: 2,
+  epigrafe: "3.3",
+  text: "Cuando la ley de presupuestos generales del Estado incluye materias ajenas a lo estrictamente presupuestario, ¿qué límite ha fijado el Tribunal Constitucional y qué consecuencia jurídica puede derivarse?",
+  options: [
+    "Que dichas materias solo son válidas si se aprueban por mayoría absoluta del Congreso",
+    "Que únicamente pueden incluirse materias con conexión directa con lo presupuestario, pudiendo declararse inconstitucionales las que no la tengan",
+    "Que la inclusión de materias ajenas es válida si no afecta a derechos fundamentales"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El Tribunal Constitucional ha establecido límites estrictos al contenido de la ley de presupuestos, permitiendo solo materias con conexión directa con lo presupuestario. La inclusión de materias ajenas puede dar lugar a su declaración de inconstitucionalidad."
+},
+
+{
+  id: 129,
+  tema: 2,
+  epigrafe: "3.3",
+  text: "¿Por qué la ley de presupuestos generales del Estado no puede crear tributos y en qué supuesto sí puede modificarlos?",
+  options: [
+    "Porque la creación de tributos está reservada a ley orgánica y solo pueden modificarse mediante estatutos tributarios",
+    "Porque su contenido está constitucionalmente limitado, pudiendo modificar tributos únicamente cuando una ley sustantiva lo autorice",
+    "Porque los tributos forman parte del Derecho financiero y quedan excluidos del sistema de fuentes administrativas"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La ley de presupuestos no puede crear tributos por los límites constitucionales a su contenido, pero sí puede modificarlos cuando una ley sustantiva previa lo autorice expresamente."
+},
+
+{
+  id: 130,
+  tema: 2,
+  epigrafe: "3.3",
+  text: "Si los presupuestos generales del Estado no se aprueban antes del inicio del ejercicio económico, ¿qué efecto jurídico se produce automáticamente?",
+  options: [
+    "La prórroga automática de los presupuestos del ejercicio anterior",
+    "La necesidad de aprobar un decreto-ley presupuestario provisional",
+    "La suspensión del gasto público no esencial hasta su aprobación"
+  ],
+  correctIndex: 0,
+  explanation:
+    "La Constitución prevé la prórroga automática de los presupuestos del ejercicio anterior cuando no se aprueban a tiempo los nuevos."
+},
+
+{
+  id: 131,
+  tema: 2,
+  epigrafe: "3.3",
+  text: "¿Qué función cumple la llamada 'ley de acompañamiento' y por qué aparece vinculada a la ley de presupuestos?",
+  options: [
+    "Sustituir a la ley de presupuestos cuando esta no se aprueba en plazo",
+    "Recoger medidas fiscales, administrativas o sociales que no pueden incluirse en la ley de presupuestos por límites constitucionales",
+    "Desarrollar reglamentariamente el contenido económico aprobado en los presupuestos"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La ley de acompañamiento surge para incluir medidas necesarias para el ejercicio siguiente que no pueden incorporarse a la ley de presupuestos debido a los límites constitucionales impuestos a su contenido."
+},
+
+{
+  id: 132,
+  tema: 2,
+  epigrafe: "3.3",
+  text: "Cuando una comunidad autónoma aprueba una ley dentro de su ámbito competencial, ¿qué órgano es competente para su control y por qué no corresponde al orden contencioso-administrativo anularla?",
+  options: [
+    "El Tribunal Supremo, por tratarse de una norma con rango inferior a la ley estatal",
+    "El Tribunal Constitucional, porque se trata de una norma con rango de ley sometida al control de constitucionalidad",
+    "Los tribunales contencioso-administrativos, al tratarse de una actuación del poder ejecutivo autonómico"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Las leyes autonómicas son auténticas leyes y su control corresponde exclusivamente al Tribunal Constitucional, no al orden contencioso-administrativo."
+},
+
+// 🟦 TEMA 2 – 4.1 DECRETO-LEGISLATIVO
+
+{
+  id: 133,
+  tema: 2,
+  epigrafe: "4.1",
+  text: "Si el Gobierno dicta un decreto legislativo sin una delegación válida o fuera del plazo conferido, ¿qué vicio se produce y qué límite constitucional resulta vulnerado?",
+  options: [
+    "Un vicio de forma subsanable que afecta únicamente a la eficacia temporal de la norma",
+    "Un vicio de incompetencia por vulneración de los límites constitucionales de la delegación legislativa",
+    "Una infracción del principio de jerarquía normativa sin consecuencias sobre la validez"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El decreto legislativo dictado sin delegación válida o fuera de plazo incurre en vicio de incompetencia, al vulnerar los límites constitucionales de la delegación previstos en los arts. 82 y ss. CE."
+},
+
+{
+  id: 134,
+  tema: 2,
+  epigrafe: "4.1",
+  text: "Cuando una delegación legislativa recae sobre una materia reservada constitucionalmente a ley orgánica, ¿qué efecto produce sobre la validez del decreto legislativo aprobado?",
+  options: [
+    "El decreto legislativo es válido si respeta el contenido esencial de los derechos afectados",
+    "El decreto legislativo resulta inconstitucional por vulnerar una reserva material indisponible",
+    "El decreto legislativo mantiene su validez hasta que sea expresamente derogado por las Cortes"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La delegación legislativa no puede recaer sobre materias reservadas a ley orgánica, por lo que el decreto legislativo resultante incurre en inconstitucionalidad."
+},
+
+{
+  id: 135,
+  tema: 2,
+  epigrafe: "4.1",
+  text: "Cuando una ley de bases fija principios y criterios que el Gobierno debe desarrollar, ¿qué modalidad de decreto legislativo se produce y qué límite impone la Constitución respecto de la retroactividad o auto-modificación?",
+  options: [
+    "Un texto refundido, sin límites constitucionales específicos en cuanto a retroactividad",
+    "Un texto articulado, sin posibilidad de autorizar retroactividad ni modificar la propia ley de bases",
+    "Un reglamento ejecutivo con fuerza de ley condicionado a control parlamentario"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La delegación mediante ley de bases da lugar a un texto articulado. La Constitución prohíbe que la ley de bases autorice retroactividad o su propia modificación (art. 83 CE)."
+},
+
+{
+  id: 136,
+  tema: 2,
+  epigrafe: "4.1",
+  text: "En el caso de un texto refundido, ¿en qué condiciones puede el Gobierno regularizar, aclarar y armonizar textos legales sin innovar el ordenamiento?",
+  options: [
+    "Siempre que actúe dentro del plazo de delegación, con libertad para introducir mejoras normativas",
+    "Únicamente dentro del alcance expresamente autorizado por la ley ordinaria de delegación",
+    "Solo cuando exista habilitación expresa del Tribunal Constitucional"
+  ],
+  correctIndex: 1,
+  explanation:
+    "En los textos refundidos, el Gobierno solo puede regularizar, aclarar y armonizar cuando la ley de delegación lo autoriza expresamente, sin innovar el ordenamiento (art. 82.5 CE)."
+},
+
+{
+  id: 137,
+  tema: 2,
+  epigrafe: "4.1",
+  text: "Si un decreto legislativo excede los límites materiales de la delegación conferida (ultra vires), ¿qué vía de control puede activarse y qué órgano puede intervenir?",
+  options: [
+    "Exclusivamente el recurso de inconstitucionalidad ante el Tribunal Constitucional",
+    "El control contencioso-administrativo por exceso de delegación, además del control constitucional",
+    "Solo el control político parlamentario mediante derogación expresa"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Además del control de constitucionalidad, la jurisdicción contencioso-administrativa puede controlar los decretos legislativos cuando exceden los límites de la delegación (doctrina del ultra vires)."
+},
+
+{
+  id: 138,
+  tema: 2,
+  epigrafe: "4.1",
+  text: "Si el Gobierno intenta subdelegar la delegación legislativa en un ministro, ¿qué consecuencia jurídica produce esa subdelegación?",
+  options: [
+    "Es válida si se limita a aspectos técnicos o de desarrollo",
+    "Es inconstitucional, al vulnerar el carácter personalísimo de la delegación legislativa",
+    "Es válida siempre que exista habilitación reglamentaria expresa"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La delegación legislativa solo puede otorgarse al Gobierno en su conjunto; la subdelegación vulnera los arts. 82 y 85 CE y es inconstitucional."
+},
+
+{
+  id: 139,
+  tema: 2,
+  epigrafe: "4.1",
+  text: "¿Por qué la derogación de un decreto legislativo exige necesariamente una norma con rango de ley?",
+  options: [
+    "Porque su origen gubernamental impide su derogación reglamentaria",
+    "Porque el decreto legislativo tiene rango legal y solo una norma del mismo rango puede derogarlo",
+    "Porque así lo exige el principio de seguridad jurídica del art. 9.3 CE"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El decreto legislativo tiene rango de ley, por lo que solo puede ser derogado por otra norma con rango legal."
+},
+
+{
+  id: 140,
+  tema: 2,
+  epigrafe: "4.1",
+  text: "Si las Cortes Generales derogan la delegación legislativa antes de que el Gobierno la haya ejercido, ¿qué efecto se produce y qué margen conserva el Gobierno?",
+  options: [
+    "La delegación se mantiene hasta el fin del plazo inicialmente previsto",
+    "La delegación queda sin efecto y el Gobierno pierde toda capacidad normativa delegada",
+    "El Gobierno puede ejercer parcialmente la delegación en materias no controvertidas"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La derogación de la delegación extingue la habilitación, de modo que el Gobierno pierde cualquier margen para dictar el decreto legislativo."
+},
+
+// 4.2 DECRETO-LEY
+
+{
+  id: 141,
+  tema: 2,
+  epigrafe: "4.2",
+  text: "Cuando el Gobierno invoca la existencia de una situación de extraordinaria y urgente necesidad para dictar un decreto-ley, ¿qué exigencia debe concurrir entre dicha situación y las medidas adoptadas?",
+  options: [
+    "Una relación de proporcionalidad estricta entre la gravedad de la situación y el alcance normativo",
+    "Una conexión de sentido funcional que justifique la necesidad inmediata de la regulación",
+    "Una imprevisibilidad absoluta de la situación que impida cualquier reacción legislativa ordinaria"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El Tribunal Constitucional exige una conexión de sentido entre la situación de extraordinaria y urgente necesidad alegada y las medidas adoptadas, sin requerir imprevisibilidad ni gravedad extrema."
+},
+
+{
+  id: 142,
+  tema: 2,
+  epigrafe: "4.2",
+  text: "Si un decreto-ley regula materias incluidas en el Título I de la Constitución, ¿qué límite material resulta aplicable y qué consecuencia tendría para su validez?",
+  options: [
+    "La limitación del contenido esencial de los derechos fundamentales, con control reforzado",
+    "La prohibición constitucional de afectar a derechos, deberes y libertades del Título I, con posible inconstitucionalidad",
+    "La necesidad de convalidación reforzada por mayoría absoluta del Congreso"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El art. 86.1 CE prohíbe que el decreto-ley afecte a los derechos, deberes y libertades del Título I, lo que puede determinar su inconstitucionalidad."
+},
+
+{
+  id: 143,
+  tema: 2,
+  epigrafe: "4.2",
+  text: "Cuando un decreto-ley incide en el régimen de las comunidades autónomas, ¿qué tipo de límite se activa y qué efecto produce sobre su viabilidad constitucional?",
+  options: [
+    "Un límite competencial flexible condicionado a la urgencia",
+    "Una prohibición material expresa que compromete su constitucionalidad",
+    "Una exigencia de audiencia previa a las comunidades afectadas"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El régimen de las comunidades autónomas está expresamente excluido del ámbito del decreto-ley por el art. 86.1 CE, lo que activa una prohibición material."
+},
+
+{
+  id: 144,
+  tema: 2,
+  epigrafe: "4.2",
+  text: "Una vez aprobado un decreto-ley, si el Congreso de los Diputados no se pronuncia dentro del plazo constitucional, ¿qué sucede con su vigencia y efectos?",
+  options: [
+    "Mantiene su vigencia indefinida hasta que sea derogado expresamente",
+    "Caduca automáticamente, perdiendo su vigencia y efectos",
+    "Se transforma tácitamente en ley ordinaria"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Si el Congreso no convalida ni deroga el decreto-ley en el plazo de treinta días, este caduca, perdiendo su vigencia."
+},
+
+{
+  id: 145,
+  tema: 2,
+  epigrafe: "4.2",
+  text: "Cuando el Congreso convalida un decreto-ley, ¿qué efecto produce dicha convalidación y por qué no lo convierte en ley en sentido estricto?",
+  options: [
+    "Transforma el decreto-ley en ley ordinaria por aprobación parlamentaria",
+    "Convierte su eficacia provisional en indefinida sin alterar su naturaleza jurídica",
+    "Le atribuye rango reglamentario reforzado"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La convalidación elimina la provisionalidad del decreto-ley, pero no lo convierte en ley formal, ya que sigue siendo una norma gubernamental convalidada."
+},
+
+{
+  id: 146,
+  tema: 2,
+  epigrafe: "4.2",
+  text: "Si el Congreso acuerda tramitar un decreto-ley como proyecto de ley por el procedimiento de urgencia, ¿qué finalidad persigue esa decisión?",
+  options: [
+    "Reforzar su rango normativo frente a eventuales recursos",
+    "Permitir la modificación del texto mediante enmiendas parlamentarias",
+    "Evitar el control posterior del Tribunal Constitucional"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La tramitación como proyecto de ley permite al Parlamento introducir enmiendas y modificar el contenido del decreto-ley."
+},
+
+{
+  id: 147,
+  tema: 2,
+  epigrafe: "4.2",
+  text: "En el control constitucional de un decreto-ley, ¿qué examina el Tribunal Constitucional respecto del presupuesto habilitante?",
+  options: [
+    "La oportunidad política de la decisión gubernamental",
+    "La existencia real y no arbitraria de la extraordinaria y urgente necesidad",
+    "La conveniencia económica de las medidas adoptadas"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El Tribunal Constitucional controla que la apreciación de la extraordinaria y urgente necesidad no sea arbitraria ni abusiva."
+},
+
+{
+  id: 148,
+  tema: 2,
+  epigrafe: "4.2",
+  text: "Si una situación no es imprevisible ni reviste gravedad extrema, ¿puede aun así justificar el uso del decreto-ley?",
+  options: [
+    "No, la imprevisibilidad es un requisito constitucional imprescindible",
+    "Sí, si requiere una respuesta normativa inmediata que no pueda esperar al procedimiento legislativo ordinario",
+    "Solo cuando así lo declare expresamente el Congreso"
+  ],
+  correctIndex: 1,
+  explanation:
+    "No se exige imprevisibilidad ni gravedad absoluta, sino la necesidad de una respuesta normativa inmediata."
+},
+
+{
+  id: 149,
+  tema: 2,
+  epigrafe: "4.2",
+  text: "Cuando un estatuto de autonomía prevé la posibilidad de decreto-ley autonómico, ¿qué límites mínimos deben respetarse y qué papel desempeña la doctrina del Tribunal Constitucional?",
+  options: [
+    "Únicamente los límites fijados por cada estatuto de autonomía",
+    "Los límites del art. 86 CE, junto con los adicionales estatutarios, conforme a la doctrina constitucional",
+    "Exclusivamente el control posterior por el parlamento autonómico"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El Tribunal Constitucional ha admitido el decreto-ley autonómico, siempre que respete los límites del art. 86 CE y los que establezca cada estatuto."
+},
+// 4.3 DECRETO DE DECLARACIÓN DEL ESTADO DE ALARMA
+
+{
+  id: 150,
+  tema: 2,
+  epigrafe: "4.3",
+  text: "La consideración del real decreto de declaración del estado de alarma como norma con «valor de ley» tiene como consecuencia procesal que:",
+  options: [
+    "Su control corresponda a la jurisdicción contencioso-administrativa por tratarse de un acto del Gobierno",
+    "El control de su constitucionalidad quede atribuido exclusivamente al Tribunal Constitucional",
+    "Solo pueda ser impugnado mediante recurso previo de inconstitucionalidad"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Al atribuirle valor de ley, la jurisprudencia constitucional desplaza su control fuera de la jurisdicción contencioso-administrativa y lo atribuye en exclusiva al Tribunal Constitucional, atendiendo a su contenido y a sus efectos sobre la legalidad ordinaria."
+},
+
+{
+  id: 151,
+  tema: 2,
+  epigrafe: "4.3",
+  text: "Cuando el estado de alarma se prorroga más allá del plazo máximo inicial de quince días, el orden constitucional exige que:",
+  options: [
+    "El Gobierno pueda acordarlo libremente mediante nuevo real decreto",
+    "El Congreso de los Diputados autorice expresamente la prórroga y determine sus condiciones",
+    "La prórroga quede automáticamente incorporada como ley ordinaria"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La Constitución exige autorización expresa del Congreso para cualquier prórroga del estado de alarma, pudiendo este fijar la duración, el ámbito territorial y las condiciones de la prórroga, reforzando el control parlamentario."
+},
+
+{
+  id: 152,
+  tema: 2,
+  epigrafe: "4.3",
+  text: "Si el decreto de declaración del estado de alarma se calificara como norma reglamentaria y no como norma con valor de ley, ello implicaría que:",
+  options: [
+    "Su control correspondería al Tribunal Constitucional por afectar a derechos fundamentales",
+    "La jurisdicción contencioso-administrativa sería competente para enjuiciar su validez",
+    "Solo podría ser impugnado mediante cuestión de inconstitucionalidad"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Si se considerase reglamento, el control de su legalidad correspondería a la jurisdicción contencioso-administrativa, en particular al Tribunal Supremo, lo que supondría un cambio sustancial en el esquema procesal de control."
+},
+
+// 5.1.1 TRATADOS INTERNACIONALES: REGULACIÓN
+
+{
+  id: 153,
+  tema: 2,
+  epigrafe: "5.1.1",
+  text: "Cuando un tratado internacional ha sido válidamente celebrado y publicado en el BOE, su entrada en vigor implica que:",
+  options: [
+    "Se integra en el ordenamiento interno y vincula únicamente a la Administración del Estado",
+    "Pasa a formar parte del Derecho interno y vincula a todos los poderes públicos",
+    "Requiere desarrollo reglamentario previo para producir efectos jurídicos"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Los tratados válidamente celebrados y publicados se integran en el ordenamiento interno y vinculan a todos los poderes públicos desde su entrada en vigor, sin necesidad de una norma interna adicional salvo que el propio tratado lo exija."
+},
+
+{
+  id: 154,
+  tema: 2,
+  epigrafe: "5.1.1",
+  text: "Si un tratado internacional atribuye competencias a una organización internacional, la Constitución exige para su autorización:",
+  options: [
+    "Una ley ordinaria por afectar a relaciones exteriores",
+    "Una ley orgánica por implicar cesión de competencias soberanas",
+    "Una simple comunicación a las Cortes Generales"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El art. 93 CE exige ley orgánica cuando el tratado atribuye competencias a una organización internacional, al implicar una limitación del ejercicio de competencias estatales."
+},
+
+{
+  id: 155,
+  tema: 2,
+  epigrafe: "5.1.1",
+  text: "En caso de conflicto entre un tratado internacional en vigor y una ley interna posterior, el sistema constitucional determina que:",
+  options: [
+    "La ley posterior prevalece por aplicación del principio cronológico",
+    "El tratado prevalece y solo puede ser modificado conforme al Derecho internacional",
+    "Ambas normas quedan inaplicadas hasta pronunciamiento del Tribunal Constitucional"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Los tratados prevalecen sobre la ley interna y no pueden ser modificados por ley ordinaria, sino únicamente conforme al propio tratado o al Derecho internacional."
+},
+
+{
+  id: 156,
+  tema: 2,
+  epigrafe: "5.1.1",
+  text: "Cuando un tratado internacional afecta a derechos fundamentales o implica obligaciones financieras para el Estado, la Constitución exige:",
+  options: [
+    "Autorización mediante ley orgánica en todo caso",
+    "Autorización parlamentaria mediante ley ordinaria",
+    "Únicamente su publicación oficial para producir efectos"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El art. 94.1 CE exige autorización mediante ley ordinaria para los tratados que afecten a derechos fundamentales, obligaciones financieras u otras materias especialmente sensibles."
+},
+
+// 5.1.2 RELEVANCIA JURÍDICO-ADMINISTRATIVA
+
+{
+  id: 157,
+  tema: 2,
+  epigrafe: "5.1.2",
+  text: "Cuando un procedimiento sancionador administrativo presenta características sustancialmente equivalentes a un proceso penal, la interpretación del art. 6 CEDH implica que:",
+  options: [
+    "Debe aplicarse íntegramente el proceso penal ordinario",
+    "Deben extenderse determinadas garantías procesales propias del proceso penal",
+    "Queda excluido el control jurisdiccional contencioso-administrativo"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La jurisprudencia del TEDH ha extendido garantías del art. 6 CEDH al procedimiento sancionador administrativo cuando este tiene naturaleza materialmente punitiva."
+},
+
+{
+  id: 158,
+  tema: 2,
+  epigrafe: "5.1.2",
+  text: "La exigencia europea de doble instancia judicial en materia sancionadora administrativa ha producido en el Derecho interno:",
+  options: [
+    "Una reforma constitucional del sistema jurisdiccional",
+    "Una reordenación del sistema contencioso-administrativo",
+    "La supresión de la potestad sancionadora administrativa"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La doctrina del TEDH ha obligado a adaptar el sistema contencioso-administrativo para garantizar doble instancia en determinados procedimientos sancionadores."
+},
+
+{
+  id: 159,
+  tema: 2,
+  epigrafe: "5.1.2",
+  text: "Cuando un derecho fundamental constitucional tiene un equivalente en un tratado internacional de derechos humanos, el art. 10.2 CE impone que:",
+  options: [
+    "El tratado sustituya directamente a la Constitución",
+    "Los derechos se interpreten conforme a esos tratados internacionales",
+    "Solo el Tribunal Constitucional pueda aplicar dicha interpretación"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El art. 10.2 CE obliga a interpretar los derechos fundamentales conforme a los tratados internacionales sobre derechos humanos ratificados por España."
+},
+
+// 5.2 OTRAS VÍAS DE RECEPCIÓN
+
+{
+  id: 160,
+  tema: 2,
+  epigrafe: "5.2",
+  text: "Cuando una directriz internacional inicialmente no vinculante se incorpora al Derecho interno mediante orden ministerial, ello supone que:",
+  options: [
+    "Mantiene su carácter meramente orientativo",
+    "Adquiere fuerza jurídica obligatoria en el ordenamiento interno",
+    "Se integra automáticamente como tratado internacional"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La adopción mediante orden ministerial transforma una directriz no vinculante en una disposición obligatoria dentro del ordenamiento interno."
+},
+
+{
+  id: 161,
+  tema: 2,
+  epigrafe: "5.2",
+  text: "La aplicación administrativa de guías internacionales como soft law interno bajo la técnica del «comply or explain» implica que:",
+  options: [
+    "La Administración pierde toda discrecionalidad",
+    "La Administración debe motivar expresamente su apartamiento",
+    "Las guías se convierten automáticamente en reglamentos"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El modelo comply or explain no elimina la discrecionalidad, pero exige motivar la decisión cuando la Administración se aparta de las guías asumidas."
+},
+
+{
+  id: 162,
+  tema: 2,
+  epigrafe: "5.2",
+  text: "La incorporación de normas técnicas internacionales que no adoptan la forma de tratado plantea como principal problema en el sistema de fuentes:",
+  options: [
+    "La imposibilidad de su aplicación por falta de rango normativo",
+    "La difuminación de los cauces clásicos de producción normativa",
+    "La prevalencia automática sobre la ley interna"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Estas normas plantean problemas de encaje en el sistema de fuentes al no responder a las formas clásicas de producción normativa, generando tensiones en términos de seguridad jurídica."
+},
+
+// 🟦 TEMA 2 – 6.1 CARACTERÍSTICAS GENERALES DEL DERECHO DE LA UNIÓN
+
+{
+  id: 163,
+  tema: 2,
+  epigrafe: "6.1",
+  text: "Cuando una norma interna resulta incompatible con una norma del Derecho de la Unión Europea, el juez nacional debe:",
+  options: [
+    "Plantear siempre cuestión de inconstitucionalidad antes de resolver",
+    "Inaplicar la norma interna incompatible sin necesidad de declaración previa de nulidad",
+    "Esperar a que el legislador nacional derogue la norma interna"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El principio de primacía obliga al juez nacional a inaplicar la norma interna incompatible, sin necesidad de una previa declaración de nulidad, para garantizar la efectividad del Derecho de la Unión."
+},
+
+{
+  id: 164,
+  tema: 2,
+  epigrafe: "6.1",
+  text: "Si una autoridad nacional cuestiona la validez de un acto del Derecho de la Unión, el sistema jurisdiccional europeo determina que:",
+  options: [
+    "Puede inaplicarlo directamente si aprecia su invalidez",
+    "Debe plantear la cuestión ante el Tribunal de Justicia, que tiene el monopolio del control de validez",
+    "Debe solicitar informe previo a la Comisión Europea"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La validez del Derecho de la Unión solo puede ser controlada por el Tribunal de Justicia de la Unión Europea, lo que impide a los jueces nacionales declarar inválidos sus actos."
+},
+
+{
+  id: 165,
+  tema: 2,
+  epigrafe: "6.1",
+  text: "Cuando un órgano judicial nacional tiene dudas interpretativas relevantes sobre una norma del Derecho de la Unión, el mecanismo de cooperación previsto es:",
+  options: [
+    "El recurso directo ante el Tribunal General",
+    "La cuestión prejudicial ante el Tribunal de Justicia de la Unión Europea",
+    "La consulta a la Comisión mediante dictamen no vinculante"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La cuestión prejudicial permite garantizar una interpretación uniforme del Derecho de la Unión y constituye un instrumento esencial de cooperación jurisdiccional."
+},
+
+{
+  id: 166,
+  tema: 2,
+  epigrafe: "6.1",
+  text: "La combinación de los principios de primacía y efecto directo del Derecho de la Unión produce como consecuencia que:",
+  options: [
+    "Las normas europeas solo prevalezcan frente a reglamentos internos",
+    "Las normas europeas puedan aplicarse incluso frente a normas legales incompatibles",
+    "Sea necesaria siempre una ley nacional de recepción"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Primacía y efecto directo permiten la aplicación inmediata del Derecho de la Unión, incluso frente a normas internas con rango de ley incompatibles."
+},
+
+{
+  id: 167,
+  tema: 2,
+  epigrafe: "6.1",
+  text: "Cuando el Derecho de la Unión impone la tutela judicial efectiva en ámbitos que regula, ello proyecta sobre los Estados la exigencia de:",
+  options: [
+    "Unificar todos los procedimientos judiciales internos",
+    "Garantizar mecanismos procesales adecuados y efectivos",
+    "Atribuir competencia exclusiva a tribunales especializados europeos"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Los Estados deben asegurar mecanismos procesales que permitan una tutela judicial efectiva de los derechos derivados del Derecho de la Unión."
+},
+
+// 🟦 TEMA 2 – 6.2 MODALIDADES DE PRODUCCIÓN NORMATIVA
+
+{
+  id: 168,
+  tema: 2,
+  epigrafe: "6.2",
+  text: "Cuando la Unión Europea regula una materia mediante legislación uniforme, el efecto principal sobre la legislación nacional es que:",
+  options: [
+    "La legislación nacional se mantiene como supletoria",
+    "La legislación nacional queda desplazada o sustituida en esa materia",
+    "Debe adaptarse mediante una ley de transposición"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La legislación uniforme sustituye la normativa nacional existente, garantizando una aplicación homogénea del Derecho de la Unión."
+},
+
+{
+  id: 169,
+  tema: 2,
+  epigrafe: "6.2",
+  text: "Cuando la Unión regula mediante armonización, el Estado miembro conserva:",
+  options: [
+    "Plena libertad normativa sin límites materiales",
+    "La elección de la forma y los medios, manteniéndose diferencias nacionales",
+    "Únicamente competencias de ejecución reglamentaria"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La armonización obliga al resultado, pero permite a los Estados elegir la forma y los medios, manteniendo diferencias entre ordenamientos."
+},
+
+{
+  id: 170,
+  tema: 2,
+  epigrafe: "6.2",
+  text: "En el procedimiento legislativo ordinario de la Unión Europea intervienen fundamentalmente:",
+  options: [
+    "La Comisión y el Tribunal de Justicia",
+    "El Parlamento Europeo y el Consejo, representando ciudadanos y Estados",
+    "El Consejo Europeo y los parlamentos nacionales"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El Parlamento Europeo representa a los ciudadanos y el Consejo a los Estados miembros, compartiendo la función legislativa."
+},
+
+// 🟦 TEMA 2 – 6.1.1 EL REGLAMENTO
+
+{
+  id: 171,
+  tema: 2,
+  epigrafe: "6.1.1",
+  text: "Cuando un reglamento europeo entra en vigor, su aplicabilidad implica que:",
+  options: [
+    "Debe ser transpuesto mediante ley nacional",
+    "Es directamente aplicable y no puede condicionarse mediante actos nacionales",
+    "Solo produce efectos tras su desarrollo reglamentario interno"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El reglamento es directamente aplicable y cualquier actuación nacional que condicione su efectividad es incompatible con el Derecho de la Unión."
+},
+
+{
+  id: 172,
+  tema: 2,
+  epigrafe: "6.1.1",
+  text: "Si un reglamento prevé medidas nacionales de ejecución, estas solo son admisibles cuando:",
+  options: [
+    "Introducen requisitos sustantivos adicionales",
+    "Tienen carácter organizativo o procedimental",
+    "Permiten adaptar su contenido material al Derecho interno"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Las medidas nacionales de ejecución solo pueden ser organizativas o procedimentales, sin alterar la aplicabilidad directa del reglamento."
+},
+
+// 🟦 TEMA 2 – 6.1.2 LA DIRECTIVA
+
+{
+  id: 173,
+  tema: 2,
+  epigrafe: "6.1.2",
+  text: "Cuando una directiva no se ha transpuesto en plazo y contiene obligaciones claras, precisas e incondicionales, los particulares pueden:",
+  options: [
+    "Invocarla frente a otros particulares y frente al Estado",
+    "Invocarla frente al Estado, pero no frente a otros particulares",
+    "Invocarla únicamente tras una sentencia del Tribunal Constitucional"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La directiva puede producir efecto directo vertical frente al Estado, pero no efecto directo horizontal frente a particulares."
+},
+
+{
+  id: 174,
+  tema: 2,
+  epigrafe: "6.1.2",
+  text: "Durante el plazo de transposición de una directiva, el Estado está obligado a:",
+  options: [
+    "Aplicarla directamente en todo caso",
+    "Abstenerse de dictar normas que comprometan el resultado exigido",
+    "Suspender la legislación interna vigente en la materia"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Durante el plazo de transposición, el Estado debe abstenerse de adoptar normas incompatibles que frustren el objetivo de la directiva."
+},
+
+// 🟦 TEMA 2 – 7. LA COSTUMBRE
+
+{
+  id: 175,
+  tema: 2,
+  epigrafe: "7",
+  text: "Cuando un ciudadano pretende fundamentar una sanción administrativa en una práctica consuetudinaria, el ordenamiento jurídico lo impide porque:",
+  options: [
+    "La costumbre solo puede aplicarse en relaciones entre particulares",
+    "En materia sancionadora rige una reserva estricta de Derecho escrito",
+    "La costumbre carece siempre de valor jurídico en el Derecho administrativo"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El art. 25.1 CE exige Derecho escrito en materia sancionadora. La costumbre no puede fundamentar sanciones ni potestades punitivas de la Administración."
+},
+
+{
+  id: 176,
+  tema: 2,
+  epigrafe: "7",
+  text: "Si una ley guarda silencio respecto de la atribución de una potestad administrativa, dicho silencio no puede integrarse mediante costumbre porque:",
+  options: [
+    "La costumbre solo opera cuando existe una laguna técnica involuntaria",
+    "El silencio puede reflejar una opción consciente del legislador de no atribuir potestades",
+    "La Administración puede suplir siempre la falta de norma mediante práctica reiterada"
+  ],
+  correctIndex: 1,
+  explanation:
+    "En Derecho administrativo, el silencio de la ley no equivale necesariamente a laguna. La atribución de potestades exige norma escrita, no pudiendo fundarse en costumbre."
+},
+
+{
+  id: 177,
+  tema: 2,
+  epigrafe: "7",
+  text: "Cuando el Derecho positivo remite expresamente a usos y costumbres locales, como en el concejo abierto o los bienes comunales, dicha remisión implica que:",
+  options: [
+    "La costumbre actúa como fuente autónoma sin límites",
+    "La costumbre adquiere eficacia jurídica en los términos fijados por la norma",
+    "La Administración puede crear nuevas potestades apoyándose en la práctica local"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La costumbre solo despliega eficacia cuando existe remisión expresa del Derecho escrito, y únicamente dentro del marco delimitado por la norma que la reconoce."
+},
+
+// 🟦 TEMA 2 – 8. PRINCIPIOS GENERALES DEL DERECHO
+
+// ─────────────────────────────────────────
+// 8. PRINCIPIOS GENERALES (GENERAL)
+// (76–77)
+// ─────────────────────────────────────────
+
+{
+  id: 178,
+  tema: 2,
+  epigrafe: "8",
+  text: "Cuando no existe ley ni costumbre aplicable a un supuesto, los principios generales del Derecho pueden actuar como fuente porque:",
+  options: [
+    "Permiten crear normas nuevas con efectos generales",
+    "Pueden aplicarse con carácter supletorio si poseen contenido regulador propio",
+    "Sustituyen automáticamente al Derecho escrito en cualquier materia"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El art. 1.4 CC atribuye a los principios generales una función supletoria, siempre que tengan capacidad reguladora propia y no exista ley ni costumbre aplicable."
+},
+
+{
+  id: 179,
+  tema: 2,
+  epigrafe: "8",
+  text: "Cuando un principio general del Derecho se positiviza en la Constitución o en una ley, el efecto principal es que:",
+  options: [
+    "Pierde su carácter normativo y queda como criterio interpretativo",
+    "Deja de ser fuente supletoria y pasa a tener el rango de la norma que lo incorpora",
+    "Solo puede aplicarse si no contradice normas reglamentarias"
+  ],
+  correctIndex: 1,
+  explanation:
+    "La positivización transforma el estatuto del principio: deja de ser supletorio y adquiere fuerza normativa con el rango constitucional o legal correspondiente."
+},
+
+// ─────────────────────────────────────────
+// 8.1 ESTATUTO BÁSICO
+// (78–79)
+// ─────────────────────────────────────────
+
+{
+  id: 180,
+  tema: 2,
+  epigrafe: "8.1",
+  text: "De acuerdo con el art. 1 del Código Civil, los principios generales del Derecho se caracterizan porque:",
+  options: [
+    "Solo actúan como criterios interpretativos sin valor normativo propio",
+    "Se aplican en defecto de ley o costumbre y además informan el ordenamiento",
+    "Prevalecen siempre sobre la ley cuando existe conflicto"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El art. 1.4 CC les atribuye una doble función: supletoria (en defecto de ley o costumbre) e informadora del ordenamiento jurídico."
+},
+
+{
+  id: 181,
+  tema: 2,
+  epigrafe: "8.1",
+  text: "Cuando un principio general presenta un alto grado de abstracción, ello implica que:",
+  options: [
+    "Su ámbito de aplicación es amplio, pero su concreción en casos concretos es menor",
+    "Solo puede aplicarse a supuestos expresamente previstos en la ley",
+    "Carece de relevancia jurídica por falta de precisión"
+  ],
+  correctIndex: 0,
+  explanation:
+    "A mayor abstracción del principio, mayor es su ámbito potencial de aplicación, pero menor su capacidad de ofrecer soluciones concretas sin ponderación."
+},
+
+// ─────────────────────────────────────────
+// 8.1.1 CARACTERIZACIÓN
+// (80–81)
+// ─────────────────────────────────────────
+
+{
+  id: 182,
+  tema: 2,
+  epigrafe: "8.1.1",
+  text: "La invocación de “mérito y capacidad” como principio general del Derecho no permite considerarlo fuente supletoria autónoma porque:",
+  options: [
+    "Es un concepto jurídico indeterminado que requiere concreción legislativa",
+    "Carece de cualquier valor normativo en el ordenamiento",
+    "Solo puede aplicarse en el ámbito del Derecho privado"
+  ],
+  correctIndex: 0,
+  explanation:
+    "Mérito y capacidad son conceptos jurídicos indeterminados que necesitan desarrollo normativo y no tienen autonomía reguladora como principio general."
+},
+
+{
+  id: 183,
+  tema: 2,
+  epigrafe: "8.1.1",
+  text: "Confundir una regla técnica de aplicación del Derecho con un principio general supone un error porque:",
+  options: [
+    "Las reglas técnicas no tienen función interpretativa",
+    "Los principios generales deben tener capacidad supletoria real",
+    "Las reglas técnicas prevalecen siempre sobre la ley"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Un principio general solo existe jurídicamente si puede operar como fuente supletoria; las reglas técnicas carecen de esa función integradora."
+},
+
+// ─────────────────────────────────────────
+// 8.1.2 IDENTIFICACIÓN
+// (82)
+// ─────────────────────────────────────────
+
+{
+  id: 184,
+  tema: 2,
+  epigrafe: "8.1.2",
+  text: "La invocación de un supuesto principio general que no ha sido reconocido ni delimitado por la jurisprudencia plantea el problema de que:",
+  options: [
+    "No puede considerarse jurídicamente existente como fuente supletoria",
+    "Debe aplicarse automáticamente por analogía",
+    "Tiene preferencia sobre la costumbre"
+  ],
+  correctIndex: 0,
+  explanation:
+    "Un principio general solo adquiere existencia jurídica efectiva cuando su contenido y efectos han sido reconocidos por la jurisprudencia."
+},
+
+// ─────────────────────────────────────────
+// 8.1.3 FUNCIÓN
+// (83)
+// ─────────────────────────────────────────
+
+{
+  id: 185,
+  tema: 2,
+  epigrafe: "8.1.3",
+  text: "Cuando existe una norma escrita aplicable al caso, un principio general no positivizado:",
+  options: [
+    "Puede anular directamente la norma escrita",
+    "Solo puede informar la interpretación y controlar actos administrativos",
+    "Desplaza automáticamente a la norma reglamentaria"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Los principios no positivizados no anulan normas escritas, pero pueden servir para interpretar el Derecho y controlar la legalidad de los actos administrativos."
+},
+
+// ─────────────────────────────────────────
+// 8.2 PRINCIPIOS POSITIVIZADOS
+// (84–85)
+// ─────────────────────────────────────────
+
+{
+  id: 186,
+  tema: 2,
+  epigrafe: "8.2",
+  text: "Cuando un principio general se incorpora a la Constitución, su efecto principal es que:",
+  options: [
+    "Vincula al legislador y puede servir como parámetro de control de constitucionalidad",
+    "Solo tiene valor programático sin eficacia jurídica directa",
+    "Limita exclusivamente la potestad reglamentaria"
+  ],
+  correctIndex: 0,
+  explanation:
+    "Los principios constitucionalizados vinculan al legislador y pueden fundamentar el control de constitucionalidad de las leyes."
+},
+
+{
+  id: 187,
+  tema: 2,
+  epigrafe: "8.2",
+  text: "Los principios rectores de la política económica y social (arts. 39–52 CE) solo pueden alegarse ante los tribunales porque:",
+  options: [
+    "Tienen el mismo rango que los derechos fundamentales",
+    "El art. 53.3 CE condiciona su invocación a lo que dispongan las leyes que los desarrollen",
+    "Carecen de cualquier eficacia jurídica"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El art. 53.3 CE establece que los principios rectores no son directamente exigibles ante los tribunales salvo conforme a las leyes que los desarrollen."
+},
+
+// 🟦 TEMA 2 – 9. JURISPRUDENCIA
+
+// ─────────────────────────────────────────
+// 9.1 NATURALEZA
+// (86–90)
+// ─────────────────────────────────────────
+
+{
+  id: 188,
+  tema: 2,
+  epigrafe: "9.1",
+  text: "Cuando una sentencia aislada del Tribunal Supremo interpreta una norma, el art. 1.6 CC solo permite que “complemente” el ordenamiento si esa interpretación:",
+  options: [
+    "Se convierte en criterio general por su publicación oficial",
+    "Constituye doctrina reiterada al interpretar y aplicar ley, costumbre o principios generales",
+    "Es asumida por el Tribunal Constitucional en una sentencia posterior"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El art. 1.6 CC vincula el efecto complementario a la doctrina reiterada del Tribunal Supremo, no a resoluciones aisladas, y la conecta con la interpretación y aplicación de la ley, la costumbre y los principios generales."
+},
+
+{
+  id: 189,
+  tema: 2,
+  epigrafe: "9.1",
+  text: "Si se identifica “jurisprudencia” con cualquier resolución judicial, el error consiste en olvidar que, para tener relevancia normativa en sentido estricto, debe tratarse de:",
+  options: [
+    "Resoluciones de cualquier órgano si se dictan en Pleno",
+    "Criterios reiterados que formen doctrina jurisprudencial con efectos jurídicos relevantes",
+    "Sentencias firmes, aunque sean únicas, por razones de seguridad jurídica"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El manual distingue entre jurisprudencia en sentido amplio (conjunto de resoluciones) y doctrina jurisprudencial relevante, que exige reiteración y consolidación para operar como criterio normativo."
+},
+
+{
+  id: 190,
+  tema: 2,
+  epigrafe: "9.1",
+  text: "La función judicial excede la idea del juez como mero aplicador automático porque, al resolver casos, el juez necesariamente:",
+  options: [
+    "Sustituye al legislador cuando la norma es discutible",
+    "Interpreta, integra y concreta el Derecho para adaptarlo a la realidad y resolver lagunas",
+    "Crea siempre una norma nueva con alcance general"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El texto subraya que la función jurisdiccional no se limita a aplicar mecánicamente: implica interpretación e integración del Derecho, con concreción de su sentido para resolver casos y lagunas."
+},
+
+{
+  id: 191,
+  tema: 2,
+  epigrafe: "9.1",
+  text: "Que el art. 1.6 CC resulte hoy insuficiente se explica, entre otras razones, porque no refleja adecuadamente:",
+  options: [
+    "La desaparición del Tribunal Supremo como órgano de unificación",
+    "La pluralidad actual de órganos con jurisprudencia relevante y los mecanismos específicos de formación de doctrina",
+    "La primacía absoluta de la jurisprudencia sobre la ley"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El manual considera desfasada la fórmula del art. 1.6 CC porque no capta la complejidad del sistema actual, con varios órganos (TJUE, TEDH, TC, TS, TSJ) y mecanismos formales de formación de doctrina."
+},
+
+{
+  id: 192,
+  tema: 2,
+  epigrafe: "9.1",
+  text: "Aunque la jurisprudencia no sea una fuente formal del Derecho, en la práctica puede operar como un criterio con efecto normativo porque:",
+  options: [
+    "Sustituye a la ley cuando esta es ambigua",
+    "Fija interpretaciones aplicadas de hecho como reglas para orientar decisiones futuras",
+    "Permite inaplicar la Constitución si es incompatible con el caso"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El texto reconoce que, pese a no ser fuente formal, la jurisprudencia funciona de hecho como criterio normativo al interpretar, integrar y concretar el Derecho, produciendo uniformidad práctica."
+},
+
+// ─────────────────────────────────────────
+// 9.2 PLURALIDAD DE JURISPRUDENCIAS
+// (91–94)
+// ─────────────────────────────────────────
+
+{
+  id: 193,
+  tema: 2,
+  epigrafe: "9.2",
+  text: "Cuando un órgano judicial español aplica Derecho de la Unión, está obligado a hacerlo conforme a la jurisprudencia del TJUE, obligación reforzada internamente por:",
+  options: [
+    "El art. 4 bis LOPJ",
+    "El art. 1.6 del Código Civil",
+    "El art. 53.3 de la Constitución"
+  ],
+  correctIndex: 0,
+  explanation:
+    "El manual indica que los jueces nacionales deben aplicar el Derecho de la Unión conforme a la jurisprudencia del TJUE, y que esa exigencia queda reforzada por el art. 4 bis LOPJ."
+},
+
+{
+  id: 194,
+  tema: 2,
+  epigrafe: "9.2",
+  text: "El apartamiento injustificado de la jurisprudencia del TJUE puede tener relevancia casacional porque:",
+  options: [
+    "Convierte automáticamente la sentencia en nula de pleno derecho",
+    "Puede fundamentar un recurso de casación por incorrecta aplicación del Derecho de la Unión",
+    "Impide cualquier control judicial por tratarse de Derecho supranacional"
+  ],
+  correctIndex: 1,
+  explanation:
+    "Según el texto, el apartamiento de la jurisprudencia del TJUE puede constituir base para casación, al afectar a la correcta aplicación uniforme del Derecho de la Unión."
+},
+
+{
+  id: 195,
+  tema: 2,
+  epigrafe: "9.2",
+  text: "Las sentencias del TEDH producen un efecto de 'cosa interpretada' del CEDH y, además, actúan como criterio obligatorio de interpretación de derechos fundamentales equivalentes por mandato de:",
+  options: [
+    "El art. 10.2 CE",
+    "El art. 96.1 CE",
+    "El art. 106.1 CE"
+  ],
+  correctIndex: 0,
+  explanation:
+    "El manual destaca que la jurisprudencia del TEDH orienta obligatoriamente la interpretación de los derechos fundamentales constitucionales equivalentes conforme al art. 10.2 CE."
+},
+
+{
+  id: 196,
+  tema: 2,
+  epigrafe: "9.2",
+  text: "Cuando el Tribunal Constitucional fija doctrina, su efecto sobre jueces y tribunales ordinarios consiste en que:",
+  options: [
+    "Solo obliga si el juez la acepta expresamente en su sentencia",
+    "Deben interpretar y aplicar las leyes conforme a esa doctrina y la jurisprudencia previa contraria queda corregida",
+    "La doctrina constitucional solo vale como recomendación sin efectos generales"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El texto indica que la doctrina del TC vincula a todos los poderes públicos; los jueces deben aplicar las leyes conforme a ella (art. 5.1 LOPJ) y la jurisprudencia previa contraria queda corregida (art. 40.2 LOTC)."
+},
+
+// ─────────────────────────────────────────
+// 9.3 FORMACIÓN EN EL ORDEN CONTENCIOSO-ADMINISTRATIVO
+// (95–100)
+// ─────────────────────────────────────────
+
+{
+  id: 197,
+  tema: 2,
+  epigrafe: "9.3",
+  text: "Para que el Tribunal Supremo admita un recurso de casación contencioso no basta con alegar infracción jurídica: es imprescindible que concurra:",
+  options: [
+    "Interés casacional objetivo para la formación de jurisprudencia",
+    "Unanimidad del órgano judicial de instancia",
+    "Cuantía suficiente por encima del umbral legal en todo caso"
+  ],
+  correctIndex: 0,
+  explanation:
+    "Desde la reforma de 2015, el recurso de casación se orienta a formar jurisprudencia y exige interés casacional objetivo como requisito central de admisión."
+},
+
+{
+  id: 198,
+  tema: 2,
+  epigrafe: "9.3",
+  text: "Cuando existe interés casacional por ausencia de jurisprudencia o interpretaciones contradictorias, el recurso de casación cumple principalmente una función:",
+  options: [
+    "De tercera instancia para revisar hechos y prueba",
+    "Nomofiláctica, orientada a asegurar interpretación uniforme del Derecho",
+    "Disciplinaria, para sancionar a tribunales inferiores"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El modelo posterior a 2015 atribuye a la casación una función nomofiláctica: asegurar la interpretación uniforme del Derecho estatal, autonómico y de la Unión Europea."
+},
+
+{
+  id: 199,
+  tema: 2,
+  epigrafe: "9.3",
+  text: "El auto de admisión en casación delimita cuestiones jurídicas y normas a interpretar, lo que implica que la sentencia de casación:",
+  options: [
+    "Debe resolver exclusivamente esas cuestiones delimitadas fijando la interpretación correcta",
+    "Puede reabrir libremente la valoración de hechos del pleito",
+    "Se limita a confirmar o revocar sin fijar criterio interpretativo"
+  ],
+  correctIndex: 0,
+  explanation:
+    "El manual indica que el auto de admisión acota el objeto casacional, y la sentencia fija la interpretación que debe considerarse correcta respecto de esas cuestiones."
+},
+
+{
+  id: 200,
+  tema: 2,
+  epigrafe: "9.3",
+  text: "Que la casación contenciosa ya no actúe como tercera instancia significa que su rasgo característico es:",
+  options: [
+    "La revisión completa del litigio para asegurar justicia material del caso",
+    "La finalidad de unificar doctrina mediante un procedimiento reflexivo, contradictorio y transparente",
+    "La posibilidad de modificar libremente normas legales por interpretación"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El texto explica que la seguridad jurídica se garantiza mediante un procedimiento formalizado: la casación fija interpretación uniforme sin funcionar como tercera instancia."
+},
+
+{
+  id: 201,
+  tema: 2,
+  epigrafe: "9.3",
+  text: "Cuando un Tribunal Superior de Justicia fija jurisprudencia sobre normas emanadas de una comunidad autónoma, actúa a través de:",
+  options: [
+    "Un recurso de casación autonómica con ámbito limitado a normas autonómicas",
+    "Un recurso de amparo ante el Tribunal Constitucional",
+    "Una cuestión prejudicial ante el TJUE"
+  ],
+  correctIndex: 0,
+  explanation:
+    "El manual señala que el sistema se completa con recursos de casación autonómica atribuidos a los TSJ para fijar doctrina sobre normas autonómicas."
+},
+
+{
+  id: 202,
+  tema: 2,
+  epigrafe: "9.3",
+  text: "Que la jurisprudencia de casación no sea formalmente vinculante responde a cautelas institucionales vinculadas a:",
+  options: [
+    "La primacía del Ejecutivo sobre el Poder Judicial",
+    "La independencia judicial, aunque el sistema busque asegurar efectividad práctica de la doctrina",
+    "La imposibilidad constitucional de publicar sentencias"
+  ],
+  correctIndex: 1,
+  explanation:
+    "El manual apunta que la ausencia de vinculación formal se explica por cautelas sobre independencia judicial, aunque el diseño del sistema busca una efectividad práctica de la doctrina casacional."
+}
+
+
+
+];
+
+// =====================================================
+// UTILIDADES
+// =====================================================
+function $(id){ return document.getElementById(id); }
+
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function getSelectedTema(){
+  const temaValue = $("temaSelect").value;
+  return (temaValue === "all") ? "all" : Number(temaValue);
+}
+
+function getCandidatesForTema(selectedTema){
+  return (selectedTema === "all")
+    ? [...masterQuestions]
+    : masterQuestions.filter(q => q.tema === selectedTema);
+}
+
+function updateQuestionStats(){
+  const selectedTema = getSelectedTema();
+  const candidates = getCandidatesForTema(selectedTema);
+  const total = candidates.length;
+
+  const usedInTema = candidates.filter(q => usedIds.includes(q.id)).length;
+  const remaining = Math.max(0, total - usedInTema);
+  const coveragePct = (total === 0) ? 0 : Math.round((usedInTema / total) * 100);
+
+  const labelTema = (selectedTema === "all") ? "Todo el contenido" : ("Tema " + selectedTema);
+
+  $("questionStats").innerHTML =
+    "<div><b>" + labelTema + "</b> · Preguntas disponibles: <b>" + total + "</b></div>" +
+    "<div class='muted'>Vistas en esta sesión: <b>" + usedInTema + "</b> · Quedan sin salir: <b>" + remaining + "</b> · Cobertura: <b>" + coveragePct + "%</b></div>";
+}
+
+let selectedQuestions = [];
+let currentIndex = 0;
+let totalCorrect = 0;
+let totalWrong = 0;
+let currentOptions = [];
+let currentTemaRunning = "all";
+
+function updateLiveScore(){
+  const puntosAciertos = totalCorrect * 0.5;
+  const puntosFallos   = totalWrong * 0.2;
+
+  let notaActual = puntosAciertos - puntosFallos;
+  if (notaActual < 0) notaActual = 0;
+
+  notaActual = Math.round(notaActual * 100) / 100;
+
+  $("liveScore").innerHTML =
+    "Aciertos: " + totalCorrect +
+    " · Fallos: " + totalWrong +
+    " · Nota provis.: " + notaActual.toFixed(2) + " / 10";
+}
+
+function updateCoverageDuringExam(){
+  const candidates = getCandidatesForTema(currentTemaRunning);
+  const total = candidates.length;
+
+  // Ojo: durante el examen aún NO metemos en usedIds; esto muestra cobertura histórica + “este test”
+  const inThisTest = selectedQuestions.length;
+  const usedInTema = candidates.filter(q => usedIds.includes(q.id)).length;
+
+  const remaining = Math.max(0, total - usedInTema);
+  $("coverage").innerHTML =
+    "Banco del tema: " + total +
+    " · Vistas: " + usedInTema +
+    " · Restan: " + remaining +
+    " · Test actual: " + inThisTest;
+}
+
+function updateTimerDisplay(){
+  const m = Math.floor(remainingSeconds / 60);
+  const s = remainingSeconds % 60;
+  $("timer").innerHTML = "Tiempo: " + String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0");
+}
+
+function startTimer(){
+  if (timerInterval) clearInterval(timerInterval);
+  remainingSeconds = EXAM_SECONDS;
+  updateTimerDisplay();
+
+  timerInterval = setInterval(function(){
+    remainingSeconds--;
+    updateTimerDisplay();
+    if (remainingSeconds <= 0){
+      clearInterval(timerInterval);
+      timerInterval = null;
+      timeIsOver();
+    }
+  }, 1000);
+}
+
+function timeIsOver(){
+  document.querySelectorAll(".option").forEach(b => b.disabled = true);
+  $("feedback").innerHTML = "<span style='color:red;'>Tiempo agotado. Se cierra el examen.</span>";
+  showResult();
+}
+
+// =====================================================
+// INICIAR EXAMEN
+// =====================================================
+$("restartBtn").onclick = function(){
+  const selectedTema = getSelectedTema();
+  currentTemaRunning = selectedTema;
+
+  let candidates = getCandidatesForTema(selectedTema);
+
+  if (candidates.length === 0){
+    $("questionContainer").style.display = "block";
+    $("questionCounter").innerHTML = "⚠️ No hay preguntas para este tema.";
+    $("questionText").innerHTML = "";
+    $("options").innerHTML = "";
+    $("feedback").innerHTML = "";
+    $("explanation").innerHTML = "";
+    $("finalResult").innerHTML = "";
+    $("nextBtn").style.display = "none";
+    updateQuestionStats();
+    return;
+  }
+
+  // preguntas aún no usadas (para no repetir dentro de sesión)
+  let remaining = candidates.filter(q => !usedIds.includes(q.id));
+  if (remaining.length === 0){
+    usedIds = [];
+    remaining = candidates;
+  }
+
+  shuffle(remaining);
+
+  selectedQuestions = remaining.length > MAX_EXAM_QUESTIONS
+    ? remaining.slice(0, MAX_EXAM_QUESTIONS)
+    : remaining;
+
+  currentIndex = 0;
+  totalCorrect = 0;
+  totalWrong = 0;
+
+  $("instrucciones").style.display = "none";
+  $("questionContainer").style.display = "block";
+
+  startTimer();
+  updateLiveScore();
+  updateCoverageDuringExam();
+  loadQuestion();
+  updateQuestionStats();
+};
+
+// =====================================================
+// CARGAR PREGUNTA
+// =====================================================
+function loadQuestion(){
+  const q = selectedQuestions[currentIndex];
+
+  $("questionCounter").innerHTML =
+    "Pregunta " + (currentIndex + 1) + " de " + selectedQuestions.length;
+
+  $("questionText").innerHTML = q.text;
+  $("options").innerHTML = "";
+  $("feedback").innerHTML = "";
+  $("explanation").innerHTML = "";
+  $("finalResult").innerHTML = "";
+  $("nextBtn").style.display = "none";
+  $("explanation").style.display = "block";
+
+  const opcionesMezcladas = q.options.map((texto, i) => ({
+    texto,
+    indexOriginal: i
+  }));
+
+  shuffle(opcionesMezcladas);
+  currentOptions = opcionesMezcladas;
+
+  opcionesMezcladas.forEach(op => {
+    const btn = document.createElement("button");
+    btn.className = "option";
+    btn.innerHTML = op.texto;
+    btn.onclick = () => handleAnswer(op.indexOriginal);
+    $("options").appendChild(btn);
+  });
+}
+
+// =====================================================
+// RESPUESTA
+// =====================================================
+function handleAnswer(idx){
+  const q = selectedQuestions[currentIndex];
+  const btns = document.querySelectorAll(".option");
+
+  btns.forEach((b, i) => {
+    b.disabled = true;
+    const optInfo = currentOptions[i];
+
+    if (optInfo.indexOriginal === q.correctIndex) b.classList.add("correct");
+    if (optInfo.indexOriginal === idx && idx !== q.correctIndex) b.classList.add("incorrect");
+  });
+
+  if (idx === q.correctIndex){
+    totalCorrect++;
+    $("feedback").innerHTML = "<span style='color:green;'>¡Correcto!</span>";
+  } else {
+    totalWrong++;
+    $("feedback").innerHTML = "<span style='color:red;'>Incorrecto</span>";
+  }
+
+  updateLiveScore();
+  $("explanation").innerHTML = q.explanation;
+
+  $("nextBtn").innerHTML =
+    (currentIndex === selectedQuestions.length - 1) ? "Ver resultado" : "Siguiente";
+
+  $("nextBtn").style.display = "inline-block";
+  $("nextBtn").onclick = nextQuestion;
+}
+
+// =====================================================
+// SIGUIENTE
+// =====================================================
+function nextQuestion(){
+  currentIndex++;
+  if(currentIndex >= selectedQuestions.length){
+    showResult();
+    return;
+  }
+  loadQuestion();
+}
+
+// =====================================================
+// RESULTADO
+// =====================================================
+function showResult(){
+  if (timerInterval){
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  $("questionText").innerHTML = "";
+  $("options").innerHTML = "";
+  $("feedback").innerHTML = "";
+  $("explanation").innerHTML = "";
+  $("nextBtn").style.display = "none";
+
+  $("questionCounter").innerHTML = "✅ Examen finalizado";
+  $("explanation").style.display = "none";
+
+  // Guardar como "vistas"
+  selectedQuestions.forEach(q => {
+    if(!usedIds.includes(q.id)) usedIds.push(q.id);
+  });
+
+  const total = selectedQuestions.length;
+  const puntosAciertos = totalCorrect * 0.5;
+  const puntosFallos  = totalWrong * 0.2;
+
+  let notaFinal = puntosAciertos - puntosFallos;
+  if (notaFinal < 0) notaFinal = 0;
+  notaFinal = Math.round(notaFinal * 100) / 100;
+
+  let calificacion = "";
+  if (notaFinal < 5)       calificacion = "Suspenso";
+  else if (notaFinal < 7)  calificacion = "Aprobado";
+  else if (notaFinal < 9)  calificacion = "Notable";
+  else if (notaFinal < 10) calificacion = "Sobresaliente";
+  else                     calificacion = "Matrícula de honor";
+
+  $("finalResult").innerHTML =
+    "<b>Aciertos:</b> " + totalCorrect + "<br>" +
+    "<b>Fallos:</b> " + totalWrong + "<br>" +
+    "<b>Preguntas totales:</b> " + total + "<br><br>" +
+    "<b>Nota final:</b> " + notaFinal.toFixed(2) + " / 10 (" + calificacion + ")";
+
+  updateCoverageDuringExam();
+  updateQuestionStats();
+}
+
+// =====================================================
+// INICIALIZACIÓN
+// =====================================================
+$("temaSelect").onchange = updateQuestionStats;
+updateQuestionStats();
+</script>
+
+</body>
+</html>
